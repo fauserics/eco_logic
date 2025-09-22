@@ -1,0 +1,132 @@
+{
+  "schemes": {
+    "LEED": {
+      "weights": {
+        "Energy": 0.3,
+        "Water": 0.2,
+        "Materials": 0.15,
+        "IEQ": 0.15,
+        "Transport": 0.1,
+        "Site": 0.05,
+        "Innovation": 0.05
+      },
+      "metrics": {
+        "energy_saving_pct": {
+          "label": "Ahorro energético (%) vs. baseline",
+          "category": "Energy",
+          "type": "pct",
+          "target": 30
+        },
+        "renewables_pct": {
+          "label": "Energía renovable on-site (%)",
+          "category": "Energy",
+          "type": "pct",
+          "target": 10
+        },
+        "water_saving_pct": {
+          "label": "Ahorro de agua (%) vs. baseline",
+          "category": "Water",
+          "type": "pct",
+          "target": 30
+        },
+        "recycled_content_pct": {
+          "label": "Contenido reciclado de materiales (%)",
+          "category": "Materials",
+          "type": "pct",
+          "target": 20
+        },
+        "daylight_areas_pct": {
+          "label": "Áreas con luz natural (%)",
+          "category": "IEQ",
+          "type": "pct",
+          "target": 75
+        },
+        "low_voc_pct": {
+          "label": "Materiales de bajo VOC (%)",
+          "category": "IEQ",
+          "type": "pct",
+          "target": 100
+        },
+        "near_transit": {
+          "label": "Cercanía a transporte público (sí/no)",
+          "category": "Transport",
+          "type": "bool",
+          "target": 1
+        },
+        "bike_parking": {
+          "label": "Bicicleteros / duchas (sí/no)",
+          "category": "Transport",
+          "type": "bool",
+          "target": 1
+        },
+        "green_roof_pct": {
+          "label": "Cubierta verde / reflectiva (%)",
+          "category": "Site",
+          "type": "pct",
+          "target": 50
+        },
+        "waste_recycled_pct": {
+          "label": "Residuos de obra reciclados (%)",
+          "category": "Site",
+          "type": "pct",
+          "target": 75
+        },
+        "innovation_points": {
+          "label": "Puntos de innovación (0–5)",
+          "category": "Innovation",
+          "type": "number",
+          "min": 0,
+          "max": 5,
+          "target": 5
+        }
+      }
+    },
+    "EDGE": {
+      "weights": {
+        "Energy": 0.45,
+        "Water": 0.35,
+        "Materials": 0.2
+      },
+      "metrics": {
+        "energy_saving_pct": {
+          "label": "Ahorro energético (%) vs. baseline",
+          "category": "Energy",
+          "type": "pct",
+          "target": 20
+        },
+        "solar_ready": {
+          "label": "Preparado para fotovoltaica (sí/no)",
+          "category": "Energy",
+          "type": "bool",
+          "target": 1
+        },
+        "water_saving_pct": {
+          "label": "Ahorro de agua (%) vs. baseline",
+          "category": "Water",
+          "type": "pct",
+          "target": 20
+        },
+        "fixtures_efficiency_score": {
+          "label": "Eficiencia de artefactos sanitarios (0–1)",
+          "category": "Water",
+          "type": "number",
+          "min": 0,
+          "max": 1,
+          "target": 1
+        },
+        "embodied_carbon_reduction_pct": {
+          "label": "Reducción de carbono incorporado (%)",
+          "category": "Materials",
+          "type": "pct",
+          "target": 20
+        },
+        "local_materials_pct": {
+          "label": "Materiales locales (%)",
+          "category": "Materials",
+          "type": "pct",
+          "target": 25
+        }
+      }
+    }
+  }
+}
