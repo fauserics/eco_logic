@@ -1,0 +1,3 @@
+project_name,energy_saving_pct,renewables_pct,water_saving_pct,recycled_content_pct,daylight_areas_pct,low_voc_pct,near_transit,bike_parking,green_roof_pct,waste_recycled_pct,innovation_points,solar_ready,fixtures_efficiency_score,embodied_carbon_reduction_pct,local_materials_pct
+Edificio A – Oficinas,25,5,22,18,70,100,1,1,20,60,2,1,0.8,10,30
+Torre B – Residencial,35,12,28,10,50,80,0,0,0,40,1,0,0.6,15,20
