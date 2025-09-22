@@ -1,0 +1,7 @@
+project_name,typology,energy_saving_pct,renewables_pct,water_saving_pct,recycled_content_pct,daylight_areas_pct,low_voc_pct,near_transit,bike_parking,green_roof_pct,waste_recycled_pct,innovation_points,solar_ready,fixtures_efficiency_score,embodied_carbon_reduction_pct,local_materials_pct
+Edificio A – Oficinas,Oficinas,25,5,22,18,70,100,1,1,20,60,2.0,1,0.8,10,30
+Edificio B – Oficinas,Oficinas,30,8,25,15,75,90,1,1,30,70,3.0,1,0.9,12,35
+Torre C – Residencial,Residencial,35,12,28,10,50,80,0,0,0,40,1.0,0,0.6,15,20
+Barrio D – Residencial,Residencial,28,6,24,12,60,85,1,0,10,50,2.0,0,0.7,18,25
+Hotel E – Hospitalidad,Hospitalidad,40,15,30,20,65,95,1,1,25,55,4.0,1,0.85,20,28
+Resort F – Hospitalidad,Hospitalidad,32,10,26,15,55,88,0,1,15,45,3.0,1,0.75,14,22
