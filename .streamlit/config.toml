@@ -1,0 +1,12 @@
+[theme]
+primaryColor = "#0E9F6E"            # emerald
+backgroundColor = "#0B1220"         # fondo oscuro
+secondaryBackgroundColor = "#121C2C"# paneles
+textColor = "#E6F4EA"               # texto claro
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
