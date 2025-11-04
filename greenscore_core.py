@@ -113,10 +113,9 @@ def _slugify(text: str) -> str:
     return t.lower()[:80] or "sec"
 
 def _markdownish_to_html_and_toc(llm_text: str):
-    """Convierte texto plano del LLM en HTML simple con <h2>/<h3> y genera TOC dinámico."""
+    """Convierte texto del LLM en HTML simple con <h2>/<h3> y genera TOC dinámico."""
     lines = (llm_text or "").splitlines()
     body_parts, toc = [], []
-    # Patrones típicos de secciones ISO 50001
     section_keys = [
         "Resumen Ejecutivo", "Alcance", "Contexto", "Revisión Energética",
         "Línea de Base", "EnPIs", "Oportunidades", "Medidas", "Ahorros",
@@ -127,7 +126,6 @@ def _markdownish_to_html_and_toc(llm_text: str):
         line = raw.strip()
         if not line:
             continue
-        # Detectar encabezados tipo "##", "###" o líneas cortas en Title Case / incluidas en claves
         if line.startswith("### "):
             title = line[4:].strip()
             sid = _slugify(title)
@@ -154,7 +152,7 @@ def _em_download_button_html(html: str, filename: str, label: str = "Descargar r
     href = f'<a download="{filename}" href="data:text/html;base64,{b64}">{label}</a>'
     st.markdown(href, unsafe_allow_html=True)
 
-# ---------- HTML de vista previa (fondo blanco) ----------
+# Vista previa HTML (fondo blanco)
 def _em_render_report_html(org: str, site: str, generated_at: str, llm_text: str,
                            brand_color: str, logo_url: str) -> str:
     body_html, _ = _markdownish_to_html_and_toc(llm_text)
@@ -189,12 +187,10 @@ def _em_render_report_html(org: str, site: str, generated_at: str, llm_text: str
     """
     return f"<!doctype html><html lang='es'><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>Reporte Energético – {org} / {site}</title>{style}</head><body>{body}</body></html>"
 
-# ---------- HTML para PDF (portada + índice + cuerpo, A4, marca de agua, paginado) ----------
+# HTML para PDF (portada + índice + cuerpo, A4, watermark, paginado)
 def _em_render_report_pdf_html(org: str, site: str, generated_at: str, llm_text: str,
                                brand_color: str, logo_url: str) -> str:
     body_html, toc = _markdownish_to_html_and_toc(llm_text)
-
-    # Construir índice dinámico
     if toc:
         toc_items = []
         for level, title, sid in toc:
@@ -205,7 +201,6 @@ def _em_render_report_pdf_html(org: str, site: str, generated_at: str, llm_text:
         toc_html = "<h2>Índice</h2><p>(No se detectaron encabezados en el texto del informe)</p>"
 
     logo_img = f"<img src='{logo_url}' alt='Logo' style='height:64pt;vertical-align:middle;margin-right:10pt;'/>" if logo_url else ""
-    # CSS para xhtml2pdf (A4 + footer con numeración + watermark)
     style = f"""
     <style>
       @page {{
@@ -213,8 +208,7 @@ def _em_render_report_pdf_html(org: str, site: str, generated_at: str, llm_text:
         margin: 2cm;
         @bottom-right {{
           content: "Página " counter(page) " de " counter(pages);
-          font-size: 9pt;
-          color: #555;
+          font-size: 9pt; color: #555;
         }}
       }}
       body {{ background:#fff; color:#111; font-family: DejaVu Sans, Arial, sans-serif; font-size:12pt; }}
@@ -229,16 +223,17 @@ def _em_render_report_pdf_html(org: str, site: str, generated_at: str, llm_text:
       .watermark {{
         position: fixed; top: 35%; left: 10%;
         transform: rotate(-20deg);
-        font-size: 72pt; color: #e6f2ef;  /* claro = marca de agua */
+        font-size: 72pt; color: #e6f2ef;
         z-index: 0;
       }}
       .section {{ position: relative; z-index: 1; }}
       .badge {{ float:right; background:{brand_color or '#0B8C6B'}; color:#fff; padding:2pt 6pt; border-radius:12pt; font-size:9pt; }}
       .headerline {{ border-bottom:2pt solid {brand_color or '#0B8C6B'}; padding-bottom:6pt; margin-bottom:12pt; }}
+      @media print {{
+        .no-print {{ display:none; }}
+      }}
     </style>
     """
-
-    # Portada (sin resumen)
     cover = f"""
     <div class="watermark">GreenScore</div>
     <div class="cover">
@@ -250,8 +245,6 @@ def _em_render_report_pdf_html(org: str, site: str, generated_at: str, llm_text:
     </div>
     <pdf:nextpage/>
     """
-
-    # Índice
     toc_page = f"""
     <div class="section">
       <div class="headerline"><h1>Contenido</h1></div>
@@ -259,47 +252,68 @@ def _em_render_report_pdf_html(org: str, site: str, generated_at: str, llm_text:
     </div>
     <pdf:nextpage/>
     """
-
-    # Cuerpo
     body = f"""
     <div class="section">
       <div class="headerline"><h1>Informe</h1></div>
       {body_html}
     </div>
     """
-
     return f"<!doctype html><html><head><meta charset='utf-8'/>{style}</head><body>{cover}{toc_page}{body}</body></html>"
 
-def _em_html_to_pdf_bytes(html: str) -> bytes:
-    """Convierte HTML a PDF (bytes) con xhtml2pdf (CSS simple)."""
-    from io import BytesIO
-    from xhtml2pdf import pisa
-    out = BytesIO()
-    if not html.lower().strip().startswith("<!doctype"):
-        html = "<!doctype html><html><head><meta charset='utf-8'></head><body>" + html + "</body></html>"
-    pisa.CreatePDF(src=html, dest=out, encoding="utf-8")
-    return out.getvalue()
+def _em_html_to_pdf_bytes(html: str) -> bytes | None:
+    """Si xhtml2pdf está instalado, genera PDF; si no, devuelve None (fallback navegador)."""
+    try:
+        from io import BytesIO
+        from xhtml2pdf import pisa  # puede no estar instalado
+        out = BytesIO()
+        if not html.lower().strip().startswith("<!doctype"):
+            html = "<!doctype html><html><head><meta charset='utf-8'></head><body>" + html + "</body></html>"
+        pisa.CreatePDF(src=html, dest=out, encoding="utf-8")
+        return out.getvalue()
+    except Exception:
+        return None
 
-# ========================= OPENAI (reporte) =========================
+def _em_show_print_button(html: str, label: str = "🖨️ Imprimir / Guardar como PDF (A4)"):
+    """Abre una ventana con el HTML y dispara window.print() (sin dependencias)."""
+    import html as _html
+    _ = _html.escape(html)
+    payload = f"""
+    <!doctype html>
+    <html>
+    <head><meta charset='utf-8'>
+      <script>
+        function openAndPrint() {{
+          var w = window.open('', '_blank');
+          w.document.open();
+          w.document.write({repr(html)});
+          w.document.close();
+          setTimeout(function() {{ w.focus(); w.print(); }}, 300);
+        }}
+      </script>
+    </head>
+    <body class="no-print" style="margin:0;padding:8px;">
+      <button onclick="openAndPrint()" style="padding:8px 12px; font-size:14px;">{label}</button>
+    </body>
+    </html>
+    """
+    st.components.v1.html(payload, height=60)
+
+# ========================= OPENAI (reporte y OCR) =========================
+
+def _openai_client():
+    import os
+    from openai import OpenAI
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Falta OPENAI_API_KEY en Secrets/entorno.")
+    return OpenAI(api_key=api_key)
 
 def _em_openai_report(dataset: dict, brand_color: str, logo_url: str,
                       model: str = "gpt-4o-mini", detail_level: int = 3,
                       temperature: float = 0.2) -> str:
-    """
-    Genera el cuerpo del reporte ISO 50001 con OpenAI.
-    - model: "gpt-4o-mini" (rápido/económico) o "gpt-4o"
-    - detail_level: 1..5 (1 = muy sintético, 5 = muy técnico)
-    - temperature: 0.0..1.0
-    """
-    import os, json as _json
+    import json as _json
     try:
-        from openai import OpenAI
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            return ("AVISO: Falta OPENAI_API_KEY en Secrets/entorno. "
-                    "Configúrala para generar el reporte automáticamente.")
-        client = OpenAI(api_key=api_key)
-
+        client = _openai_client()
         depth_map = {
             1: "Resumen ejecutivo muy sintético, no exceder 300 palabras.",
             2: "Resumen breve + hallazgos clave (≈500 palabras).",
@@ -308,7 +322,6 @@ def _em_openai_report(dataset: dict, brand_color: str, logo_url: str,
             5: "Informe técnico exhaustivo, supuestos, riesgos, fórmulas simples y M&V detallada (≈2000 palabras)."
         }
         guidance = depth_map.get(int(detail_level), depth_map[3])
-
         system = (
             "Eres consultor sénior en gestión de la energía bajo ISO 50001. "
             "Redacta un informe institucional en español con tono profesional y claro, "
@@ -323,7 +336,6 @@ def _em_openai_report(dataset: dict, brand_color: str, logo_url: str,
             f"PARÁMETROS DE REDACCIÓN: {guidance}\n\n"
             f"DATOS (JSON):\n{_json.dumps(dataset, ensure_ascii=False)}"
         )
-
         out = client.chat.completions.create(
             model=model,
             temperature=float(temperature),
@@ -337,7 +349,211 @@ def _em_openai_report(dataset: dict, brand_color: str, logo_url: str,
         return (f"AVISO: No fue posible llamar a OpenAI ({e}). "
                 "Revisá el modelo, la versión del SDK y la clave.")
 
-# ========================= PÁGINAS =========================
+# --------- OCR con OpenAI para imágenes (PNG/JPG/JPEG) ---------
+
+def _ocr_image_invoice_with_openai(file_bytes: bytes, filename: str, model: str = "gpt-4o-mini"):
+    """
+    Extrae campos de factura a partir de una imagen usando OpenAI Vision.
+    Devuelve DataFrame con columnas: _year_month, _kwh, _cost, _demand_kw, _currency, _source
+    """
+    import base64, io
+    from datetime import datetime
+
+    try:
+        client = _openai_client()
+    except Exception as e:
+        st.warning(f"OCR no disponible: {e}")
+        return pd.DataFrame()
+
+    b64 = base64.b64encode(file_bytes).decode("utf-8")
+    image_url = f"data:image/{filename.split('.')[-1].lower()};base64,{b64}"
+
+    prompt = (
+        "Extrae datos de la factura de energía. Responde en JSON con una lista 'rows', "
+        "cada row con: year_month (YYYY-MM), kwh (número), cost (número), demand_kw (número o null), currency (texto). "
+        "Si hay un periodo (desde–hasta), usá el mes de facturación. Si sólo hay fecha de emisión, intentá deducir el mes correspondiente."
+    )
+    try:
+        out = client.chat.completions.create(
+            model=model,
+            temperature=0.0,
+            messages=[
+                {"role": "system", "content": "Eres un extractor de datos robusto y preciso."},
+                {"role": "user", "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]}
+            ]
+        )
+        content = out.choices[0].message.content or "{}"
+        data = json.loads(content)
+        rows = data.get("rows", [])
+        recs = []
+        for r in rows:
+            ym = str(r.get("year_month") or "").strip()
+            try:
+                dt = pd.to_datetime(ym + "-01", errors="coerce")
+            except Exception:
+                dt = pd.NaT
+            recs.append({
+                "_year_month": dt if pd.notna(dt) else pd.NaT,
+                "_kwh": float(r.get("kwh") or 0),
+                "_cost": float(r.get("cost") or 0),
+                "_demand_kw": float(r.get("demand_kw")) if r.get("demand_kw") not in (None, "") else None,
+                "_currency": str(r.get("currency") or "").strip() or None,
+                "_source": filename
+            })
+        return pd.DataFrame(recs)
+    except Exception as e:
+        st.warning(f"No se pudo realizar OCR con OpenAI en {filename}: {e}")
+        return pd.DataFrame()
+
+# --------- Parser simple de PDF con texto (sin OCR) ---------
+
+def _extract_text_from_pdf_simple(file_obj) -> str:
+    """
+    Extrae texto de un PDF si el contenido es 'texto' (no escaneado).
+    Evita dependencias nativas. Si no hay PyPDF2 o falla, devuelve ''.
+    """
+    try:
+        import PyPDF2  # opcional, puro Python; si no está, caemos a ''
+    except Exception:
+        return ""
+    try:
+        reader = PyPDF2.PdfReader(file_obj)
+        chunks = []
+        for page in reader.pages:
+            try:
+                chunks.append(page.extract_text() or "")
+            except Exception:
+                continue
+        return "\n".join(chunks).strip()
+    except Exception:
+        return ""
+
+def _parse_invoice_text_blocks_with_llm(raw_text: str, filename: str, model: str = "gpt-4o-mini") -> pd.DataFrame:
+    """
+    Usa LLM para convertir texto crudo (de PDF con texto) a filas mensuales.
+    """
+    if not raw_text.strip():
+        return pd.DataFrame()
+    try:
+        client = _openai_client()
+    except Exception as e:
+        st.warning(f"Parser LLM deshabilitado: {e}")
+        return pd.DataFrame()
+
+    instruction = (
+        "A partir del texto de una factura(s) de energía, construye JSON con una lista 'rows' "
+        "de registros mensuales con las claves: year_month (YYYY-MM), kwh (número), cost (número), "
+        "demand_kw (número o null), currency (texto). Si hay subtotales/IVA, usa el total final. "
+        "Si hay varias facturas en el texto, produce múltiples filas."
+    )
+    try:
+        out = client.chat.completions.create(
+            model=model,
+            temperature=0.0,
+            messages=[
+                {"role": "system", "content": "Eres un extractor de datos de facturas sumamente preciso."},
+                {"role": "user", "content": f"{instruction}\n\nTEXTO:\n{raw_text[:16000]}"}  # trunc por seguridad
+            ]
+        )
+        content = out.choices[0].message.content or "{}"
+        data = json.loads(content)
+        rows = data.get("rows", [])
+        recs = []
+        for r in rows:
+            ym = str(r.get("year_month") or "").strip()
+            dt = pd.to_datetime(ym + "-01", errors="coerce")
+            recs.append({
+                "_year_month": dt if pd.notna(dt) else pd.NaT,
+                "_kwh": float(r.get("kwh") or 0),
+                "_cost": float(r.get("cost") or 0),
+                "_demand_kw": float(r.get("demand_kw")) if r.get("demand_kw") not in (None, "") else None,
+                "_currency": str(r.get("currency") or "").strip() or None,
+                "_source": filename
+            })
+        return pd.DataFrame(recs)
+    except Exception as e:
+        st.warning(f"No se pudo interpretar texto de PDF {filename} con LLM: {e}")
+        return pd.DataFrame()
+
+# ========================= RESUMEN DE FACTURAS =========================
+
+def _em_summarize_invoices(inv_df: pd.DataFrame, total_area_m2: float, users_count: int,
+                           baseline_start: str | None, baseline_end: str | None):
+    """
+    Devuelve un dict con:
+      - monthly_series: [{month, kwh, cost, demand_kw}]
+      - metrics: {total_kwh, total_cost, unit_cost, months, kwh_year_equiv, kwh_per_m2_yr, kwh_per_user_yr}
+      - period: {start, end, baseline_*}
+      - notes: advertencias
+    """
+    result = {
+        "monthly_series": [],
+        "metrics": {},
+        "period": {"start": None, "end": None},
+        "notes": []
+    }
+    if inv_df is None or inv_df.empty or "_year_month" not in inv_df.columns:
+        result["notes"].append("No hay datos tabulares de facturas (o no se detectó período).")
+        return result
+
+    df = inv_df.copy()
+    df = df.dropna(subset=["_year_month"])
+    if df.empty:
+        result["notes"].append("No se pudo interpretar el período de facturación.")
+        return result
+
+    grp = df.groupby("_year_month", as_index=False).agg(
+        kwh=("_kwh", "sum"),
+        cost=("_cost", "sum"),
+        demand_kw=("_demand_kw", "max")
+    ).sort_values("_year_month")
+
+    result["monthly_series"] = [
+        {"month": d.strftime("%Y-%m"), "kwh": float(k or 0), "cost": float(c or 0), "demand_kw": float(dk or 0) if pd.notna(dk) else None}
+        for d, k, c, dk in zip(grp["_year_month"], grp["kwh"], grp["cost"], grp["demand_kw"])
+    ]
+
+    total_kwh = float(grp["kwh"].fillna(0).sum())
+    total_cost = float(grp["cost"].fillna(0).sum())
+    months = int(grp.shape[0])
+    unit_cost = (total_cost / total_kwh) if total_kwh > 0 else None
+
+    factor = 12 / months if months and months < 12 else 1.0
+    kwh_year_equiv = total_kwh * factor
+
+    kwh_per_m2_yr = (kwh_year_equiv / total_area_m2) if total_area_m2 and total_area_m2 > 0 else None
+    kwh_per_user_yr = (kwh_year_equiv / users_count) if users_count and users_count > 0 else None
+
+    result["metrics"] = {
+        "total_kwh": total_kwh,
+        "total_cost": total_cost,
+        "unit_cost": unit_cost,
+        "months": months,
+        "kwh_year_equiv": kwh_year_equiv,
+        "kwh_per_m2_yr": kwh_per_m2_yr,
+        "kwh_per_user_yr": kwh_per_user_yr
+    }
+
+    start = grp["_year_month"].min()
+    end = grp["_year_month"].max()
+    result["period"] = {
+        "start": start.strftime("%Y-%m") if pd.notna(start) else None,
+        "end": end.strftime("%Y-%m") if pd.notna(end) else None,
+        "baseline_start": str(baseline_start) if baseline_start else None,
+        "baseline_end": str(baseline_end) if baseline_end else None
+    }
+
+    if months < 6:
+        result["notes"].append("Menos de 6 meses de datos: la anualización puede ser poco representativa.")
+    if total_kwh == 0:
+        result["notes"].append("kWh total = 0 (revisar extracción/columnas).")
+
+    return result
+
+# ========================= PÁGINAS (UI) =========================
 
 def page_proyecto_individual():
     cfg = load_config()
@@ -471,7 +687,7 @@ def page_portfolio():
             ).properties(height=420),
             use_container_width=True
         )
-        by_tp = view.groupby("typology", as_index=False)["score"].mean().sort_values("score", descending=False)
+        by_tp = view.groupby("typology", as_index=False)["score"].mean().sort_values("score", ascending=False)
         st.altair_chart(
             alt.Chart(by_tp).mark_bar().encode(
                 x=alt.X("score:Q", title="Promedio por tipología"),
@@ -541,21 +757,89 @@ def page_energy_management():
     occupancy_pattern = occ_col2.text_input("Patrón de ocupación", "L–V 9–18, sáb reducido", key="em_occpat")
 
     st.markdown("**Evidencias**")
-    photos = st.file_uploader("Fotos (PNG/JPG)", type=["png","jpg","jpeg"], accept_multiple_files=True, key="em_photos")
-    invoices = st.file_uploader("Facturas/mediciones (CSV/XLSX preferido; PDF/IMG como evidencia)",
-                                type=["csv","xlsx","xls","pdf","png","jpg","jpeg"], accept_multiple_files=True, key="em_invoices")
+    photos = st.file_uploader("Fotos / Facturas en imagen (PNG/JPG)", type=["png","jpg","jpeg"], accept_multiple_files=True, key="em_photos")
+    invoices = st.file_uploader("Facturas/mediciones (CSV/XLSX o PDF)", type=["csv","xlsx","xls","pdf"], accept_multiple_files=True, key="em_invoices")
+
+    with st.expander("Opciones de lectura de facturas", expanded=True):
+        use_ocr = st.toggle("Usar OCR con OpenAI para imágenes (y parser LLM para PDF con texto)", value=True, help="No agrega dependencias. Para PDF escaneado, subí imágenes.")
+        ocr_model = st.selectbox("Modelo para OCR/parse", ["gpt-4o-mini","gpt-4o"], index=0, help="Se usa para OCR de imágenes y parsing semántico de PDFs de solo texto.")
 
     st.markdown("**Política energética, objetivos y plan**")
     energy_policy = st.text_area("Política energética (borrador)", key="em_policy")
     objectives = st.text_area("Objetivos/Metas (uno por línea)", "Reducir EUI 10% en 12 meses\nPF ≥ 0.97", key="em_objs")
     action_plan = st.text_area("Plan de acción (uno por línea)", "LED\nOptimización consignas HVAC\nMantenimiento VFD", key="em_plan")
 
-    # ---- Generar y guardar dataset
     if "em_last_dataset" not in st.session_state:
         st.session_state["em_last_dataset"] = None
 
+    # ---- Guardar dataset del sitio
     if st.button("Guardar dataset del sitio (memoria de sesión)", key="em_save"):
-        inv_df, saved_files = _em_parse_invoices(invoices)
+        inv_tables, saved_files = [], []
+
+        # 1) CSV/XLSX/PDF
+        for f in (invoices or []):
+            saved_files.append(getattr(f, "name", ""))
+            name = getattr(f, "name", "file")
+            suf = name.lower().split(".")[-1]
+            try:
+                if suf == "csv":
+                    df = pd.read_csv(f)
+                    df["_source"] = name
+                    # normalización básica
+                    df = _normalize_invoice_table(df, name)
+                    inv_tables.append(df)
+                elif suf in ("xlsx","xlsm","xls"):
+                    df = pd.read_excel(f)
+                    df["_source"] = name
+                    df = _normalize_invoice_table(df, name)
+                    inv_tables.append(df)
+                elif suf == "pdf":
+                    # Intento 1: extraer texto (no OCR)
+                    raw = _extract_text_from_pdf_simple(f)
+                    if raw:
+                        df = _parse_invoice_text_blocks_with_llm(raw, name, model=ocr_model) if use_ocr else pd.DataFrame()
+                        if not df.empty:
+                            inv_tables.append(df)
+                        else:
+                            st.info(f"PDF leído pero sin estructura detectable en {name}.")
+                    else:
+                        st.warning(f"PDF sin texto/escaneado detectado: {name}. Subí imágenes (JPG/PNG) para OCR.")
+                else:
+                    st.info(f"Formato no soportado en 'Facturas': {name}")
+            except Exception as e:
+                st.warning(f"No se pudo leer {name}: {e}")
+
+        # 2) Imágenes (OCR)
+        for p in (photos or []):
+            saved_files.append(getattr(p, "name", ""))
+            pname = getattr(p, "name", "photo")
+            try:
+                if use_ocr:
+                    df = _ocr_image_invoice_with_openai(p.read(), pname, model=ocr_model)
+                    if not df.empty:
+                        inv_tables.append(df)
+                    else:
+                        st.info(f"OCR sin resultados para {pname}.")
+            except Exception as e:
+                st.warning(f"No se pudo OCR {pname}: {e}")
+
+        # Consolidación
+        inv_df = pd.concat(inv_tables, ignore_index=True) if inv_tables else pd.DataFrame()
+
+        # Área total y usuarios (para intensidades)
+        try:
+            total_area_m2 = float(pd.DataFrame(st.session_state.get("em_uses_df", [])).get("area_m2", pd.Series([0])).sum())
+        except Exception:
+            total_area_m2 = 0.0
+
+        invoices_summary = _em_summarize_invoices(
+            inv_df=inv_df,
+            total_area_m2=total_area_m2,
+            users_count=int(st.session_state.get("em_users", 0)),
+            baseline_start=st.session_state.get("em_bstart"),
+            baseline_end=st.session_state.get("em_bend"),
+        )
+
         dataset = {
             "site": {
                 "organization": org or "Org",
@@ -576,14 +860,24 @@ def page_energy_management():
                 "occupancy_pattern": occupancy_pattern,
             },
             "building_uses": uses_df.to_dict("records"),
-            "evidence_files": [getattr(p, "name", str(p)) for p in (photos or [])] + saved_files,
-            "invoices_preview": inv_df.head(100).to_dict(orient="records") if 'inv_df' in locals() and not inv_df.empty else [],
+            "evidence_files": saved_files,
+            "invoices": {
+                "preview_rows": inv_df.head(100).to_dict(orient="records") if (inv_df is not None and not inv_df.empty) else [],
+                "summary": invoices_summary
+            },
         }
         st.session_state["em_last_dataset"] = dataset
         st.success("Dataset guardado en memoria de sesión.")
-        if 'inv_df' in locals() and not inv_df.empty:
-            st.dataframe(pd.DataFrame(st.session_state["em_last_dataset"]["invoices_preview"]).head(50),
-                         use_container_width=True)
+
+        if inv_df is not None and not inv_df.empty:
+            st.markdown("**Vista rápida de facturas (normalizadas/OCR):**")
+            show_cols = [c for c in ["_year_month","_kwh","_cost","_demand_kw","_currency","_source"] if c in inv_df.columns]
+            if show_cols:
+                st.dataframe(inv_df[show_cols].rename(columns={
+                    "_year_month":"mes","_kwh":"kWh","_cost":"costo","_demand_kw":"demanda_kw","_currency":"moneda","_source":"archivo"
+                }), use_container_width=True)
+            st.markdown("**Resumen:**")
+            st.json(invoices_summary)
 
     # ---- Parámetros de reporte LLM + branding
     st.markdown("----")
@@ -595,20 +889,12 @@ def page_energy_management():
             "Modelo OpenAI",
             options=["gpt-4o-mini", "gpt-4o"],
             index=0,
-            help="Elegí el LLM. 4o-mini es rápido y económico; 4o ofrece mayor calidad."
+            help="4o-mini: rápido y económico · 4o: mayor calidad"
         )
     with colm2:
-        detail_level = st.slider(
-            "Nivel de detalle",
-            min_value=1, max_value=5, value=3, step=1,
-            help="1 = muy sintético ··· 5 = muy técnico/exhaustivo"
-        )
+        detail_level = st.slider("Nivel de detalle", 1, 5, 3, 1)
     with colm3:
-        temperature = st.slider(
-            "Creatividad (temp.)",
-            min_value=0.0, max_value=1.0, value=0.2, step=0.1,
-            help="0.0 = determinista · 1.0 = más creativo"
-        )
+        temperature = st.slider("Creatividad (temp.)", 0.0, 1.0, 0.2, 0.1)
 
     brand_color = st.color_picker("Color institucional", "#0B8C6B", key="em_color")
     logo_url = st.text_input("Logo (URL pública opcional)", key="em_logo")
@@ -627,7 +913,7 @@ def page_energy_management():
                 detail_level=detail_level,
                 temperature=temperature,
             )
-            # HTML para vista previa (fondo blanco)
+            # Vista previa HTML (fondo blanco)
             html = _em_render_report_html(
                 org=dataset["site"]["organization"],
                 site=dataset["site"]["site_name"],
@@ -640,7 +926,7 @@ def page_energy_management():
             st.markdown("Vista previa:")
             st.components.v1.html(html, height=800, scrolling=True)
 
-            # HTML para PDF (portada + índice + cuerpo + watermark + numeración)
+            # PDF (nativo si hay libs; si no, fallback navegador)
             pdf_html = _em_render_report_pdf_html(
                 org=dataset["site"]["organization"],
                 site=dataset["site"]["site_name"],
@@ -649,8 +935,8 @@ def page_energy_management():
                 brand_color=brand_color,
                 logo_url=logo_url
             )
-            try:
-                pdf_bytes = _em_html_to_pdf_bytes(pdf_html)
+            pdf_bytes = _em_html_to_pdf_bytes(pdf_html)
+            if pdf_bytes:
                 st.download_button(
                     "⬇️ Descargar PDF (A4)",
                     data=pdf_bytes,
@@ -658,28 +944,50 @@ def page_energy_management():
                     mime="application/pdf",
                     use_container_width=True
                 )
-            except Exception as e:
-                st.warning(f"No se pudo generar PDF automáticamente ({e}). "
-                           "Podés imprimir el HTML a PDF desde el navegador.")
+            else:
+                st.info("Podés exportar el PDF directamente desde tu navegador.")
+                _em_show_print_button(pdf_html, label="🖨️ Imprimir / Guardar como PDF (A4)")
 
 # ========================= HELPERS DE CARGA =========================
 
-def _em_parse_invoices(files):
-    import pandas as pd, os
-    tables, saved = [], []
-    for f in (files or []):
-        saved.append(getattr(f, "name", ""))
-        suf = os.path.splitext(f.name)[1].lower()
+def _normalize_invoice_table(df: pd.DataFrame, source_name: str) -> pd.DataFrame:
+    """Normaliza nombres comunes y crea columnas estándar internas."""
+    cols = {c.lower().strip(): c for c in df.columns}
+    def pick(cands):
+        for k in cands:
+            if k in cols: 
+                return cols[k]
+        return None
+
+    c_date  = pick(["fecha","date","periodo","period","billing_period","mes","month"])
+    c_kwh   = pick(["kwh","consumo_kwh","consumption_kwh","energy_kwh","active_energy_kwh"])
+    c_cost  = pick(["costo","cost","importe","monto","amount","total"])
+    c_dem   = pick(["demanda_kw","kw","peak_kw","dem_kw"])
+    c_curr  = pick(["moneda","currency"])
+
+    if c_date:
         try:
-            if suf == ".csv":
-                df = pd.read_csv(f)
-            elif suf in (".xlsx", ".xlsm", ".xls"):
-                df = pd.read_excel(f)
-            else:
-                df = pd.DataFrame()
+            df["_date"] = pd.to_datetime(df[c_date], dayfirst=True, errors="coerce")
         except Exception:
-            df = pd.DataFrame()
-        if not df.empty:
-            df["_source"] = f.name
-            tables.append(df)
-    return (pd.concat(tables, ignore_index=True) if tables else pd.DataFrame(), saved)
+            df["_date"] = pd.to_datetime(df[c_date], errors="coerce")
+        m = df["_date"].isna() & df[c_date].astype(str).str.match(r"^\d{4}-\d{2}$")
+        if m.any():
+            df.loc[m, "_date"] = pd.to_datetime(df.loc[m, c_date] + "-01", errors="coerce")
+        df["_year_month"] = df["_date"].dt.to_period("M").dt.to_timestamp()
+    else:
+        df["_year_month"] = pd.NaT
+
+    for src, dst in [(c_kwh, "_kwh"), (c_cost, "_cost"), (c_dem, "_demand_kw")]:
+        if src:
+            df[dst] = pd.to_numeric(df[src], errors="coerce")
+        else:
+            df[dst] = None
+
+    df["_currency"] = df[c_curr].astype(str) if c_curr else None
+    df["_source"] = source_name
+    return df
+
+def _em_parse_invoices(files):
+    """No se usa más (mantenida por compatibilidad)."""
+    return pd.DataFrame(), []
+
