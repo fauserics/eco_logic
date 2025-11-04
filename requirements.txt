@@ -9,8 +9,8 @@ jinja2>=3.1.4
 openai>=1.52.0
 pydantic>=2.8.0
 plotly>=5.24.0
-xhtml2pdf>=0.2.15,<0.3
-reportlab>=3.6.12
-html5lib>=1.1
-Pillow>=10.0.0
-PyPDF2>=3.0.0
+xhtml2pdf==0.2.15
+reportlab==3.6.12
+html5lib==1.1
+Pillow==10.3.0
+PyPDF2==3.0.1
