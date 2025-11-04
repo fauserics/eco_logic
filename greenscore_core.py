@@ -1,6 +1,8 @@
 import json
 import re
+from io import BytesIO
 from pathlib import Path
+
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -108,7 +110,7 @@ def label_tier(score: float):
 # ========================= UTILIDADES REPORTE / PDF =========================
 
 def _slugify(text: str) -> str:
-    t = re.sub(r"[^a-zA-Z0-9\s\-_/]", "", text or "")
+    t = re.sub(r"[^a-zA-Z0-9\s\\-_/]", "", text or "")
     t = re.sub(r"\s+", "-", t.strip())
     return t.lower()[:80] or "sec"
 
@@ -298,7 +300,7 @@ def _em_show_print_button(html: str, label: str = "🖨️ Imprimir / Guardar co
     """
     st.components.v1.html(payload, height=60)
 
-# ========================= OPENAI (reporte y OCR) =========================
+# ========================= OPENAI (reporte y OCR/parse) =========================
 
 def _openai_client():
     import os
@@ -324,8 +326,12 @@ def _em_openai_report(dataset: dict, brand_color: str, logo_url: str,
         guidance = depth_map.get(int(detail_level), depth_map[3])
         system = (
             "Eres consultor sénior en gestión de la energía bajo ISO 50001. "
-            "Redacta un informe institucional en español con tono profesional y claro, "
-            "incluyendo estas secciones (con encabezados explícitos): "
+            "Redacta un informe institucional en español con tono profesional y claro. "
+            "DEBES usar los valores de línea de base y EnPIs provistos en dataset.derived "
+            "(kWh/año equivalente, $/kWh, kWh/m²·año, kWh/usuario·año) como referencia numérica. "
+            "Cita explícitamente la línea de base con su período (dataset.derived.baseline.period_start → period_end) "
+            "y construye EnPIs a partir de esos valores. Si faltan, indícalo como limitación de datos. "
+            "Incluye estas secciones (con encabezados explícitos): "
             "Resumen Ejecutivo; Alcance y Contexto; Revisión Energética; "
             "Línea de Base y EnPIs; Oportunidades y Medidas; "
             "Estimación de Ahorros (kWh/año, %, costo, payback simple); "
@@ -356,9 +362,7 @@ def _ocr_image_invoice_with_openai(file_bytes: bytes, filename: str, model: str 
     Extrae campos de factura a partir de una imagen usando OpenAI Vision.
     Devuelve DataFrame con columnas: _year_month, _kwh, _cost, _demand_kw, _currency, _source
     """
-    import base64, io
-    from datetime import datetime
-
+    import base64
     try:
         client = _openai_client()
     except Exception as e:
@@ -366,12 +370,14 @@ def _ocr_image_invoice_with_openai(file_bytes: bytes, filename: str, model: str 
         return pd.DataFrame()
 
     b64 = base64.b64encode(file_bytes).decode("utf-8")
-    image_url = f"data:image/{filename.split('.')[-1].lower()};base64,{b64}"
+    ext = filename.split(".")[-1].lower()
+    image_url = f"data:image/{ext if ext in ('jpg','jpeg','png') else 'png'};base64,{b64}"
 
     prompt = (
         "Extrae datos de la factura de energía. Responde en JSON con una lista 'rows', "
-        "cada row con: year_month (YYYY-MM), kwh (número), cost (número), demand_kw (número o null), currency (texto). "
-        "Si hay un periodo (desde–hasta), usá el mes de facturación. Si sólo hay fecha de emisión, intentá deducir el mes correspondiente."
+        "cada row con: year_month (YYYY-MM), kwh (número), cost (número), "
+        "demand_kw (número o null), currency (texto). "
+        "Si hay un periodo (desde–hasta), usa el mes de facturación."
     )
     try:
         out = client.chat.completions.create(
@@ -391,10 +397,7 @@ def _ocr_image_invoice_with_openai(file_bytes: bytes, filename: str, model: str 
         recs = []
         for r in rows:
             ym = str(r.get("year_month") or "").strip()
-            try:
-                dt = pd.to_datetime(ym + "-01", errors="coerce")
-            except Exception:
-                dt = pd.NaT
+            dt = pd.to_datetime(ym + "-01", errors="coerce")
             recs.append({
                 "_year_month": dt if pd.notna(dt) else pd.NaT,
                 "_kwh": float(r.get("kwh") or 0),
@@ -413,10 +416,10 @@ def _ocr_image_invoice_with_openai(file_bytes: bytes, filename: str, model: str 
 def _extract_text_from_pdf_simple(file_obj) -> str:
     """
     Extrae texto de un PDF si el contenido es 'texto' (no escaneado).
-    Evita dependencias nativas. Si no hay PyPDF2 o falla, devuelve ''.
+    Si PyPDF2 no está disponible o falla, devuelve ''.
     """
     try:
-        import PyPDF2  # opcional, puro Python; si no está, caemos a ''
+        import PyPDF2  # opcional
     except Exception:
         return ""
     try:
@@ -446,15 +449,14 @@ def _parse_invoice_text_blocks_with_llm(raw_text: str, filename: str, model: str
     instruction = (
         "A partir del texto de una factura(s) de energía, construye JSON con una lista 'rows' "
         "de registros mensuales con las claves: year_month (YYYY-MM), kwh (número), cost (número), "
-        "demand_kw (número o null), currency (texto). Si hay subtotales/IVA, usa el total final. "
-        "Si hay varias facturas en el texto, produce múltiples filas."
+        "demand_kw (número o null), currency (texto). Si hay varias facturas, produce múltiples filas."
     )
     try:
         out = client.chat.completions.create(
             model=model,
             temperature=0.0,
             messages=[
-                {"role": "system", "content": "Eres un extractor de datos de facturas sumamente preciso."},
+                {"role": "system", "content": "Eres un extractor de datos de facturas preciso."},
                 {"role": "user", "content": f"{instruction}\n\nTEXTO:\n{raw_text[:16000]}"}  # trunc por seguridad
             ]
         )
@@ -478,12 +480,12 @@ def _parse_invoice_text_blocks_with_llm(raw_text: str, filename: str, model: str
         st.warning(f"No se pudo interpretar texto de PDF {filename} con LLM: {e}")
         return pd.DataFrame()
 
-# ========================= RESUMEN DE FACTURAS =========================
+# ========================= RESUMEN / BASELINE / ENPI =========================
 
 def _em_summarize_invoices(inv_df: pd.DataFrame, total_area_m2: float, users_count: int,
                            baseline_start: str | None, baseline_end: str | None):
     """
-    Devuelve un dict con:
+    Devuelve:
       - monthly_series: [{month, kwh, cost, demand_kw}]
       - metrics: {total_kwh, total_cost, unit_cost, months, kwh_year_equiv, kwh_per_m2_yr, kwh_per_user_yr}
       - period: {start, end, baseline_*}
@@ -552,6 +554,86 @@ def _em_summarize_invoices(inv_df: pd.DataFrame, total_area_m2: float, users_cou
         result["notes"].append("kWh total = 0 (revisar extracción/columnas).")
 
     return result
+
+def _em_compute_baseline_from_invoices(invoices_summary: dict,
+                                       total_area_m2: float,
+                                       users_count: int):
+    """
+    Construye baseline y EnPI a partir de invoices_summary.
+    """
+    res = {"baseline": {}, "enpi": {}, "notas": []}
+    if not invoices_summary or "metrics" not in invoices_summary:
+        res["notas"].append("No hay métricas de facturas para baseline/EnPI.")
+        return res
+
+    m = invoices_summary.get("metrics", {})
+    p = invoices_summary.get("period", {})
+    total_kwh = m.get("total_kwh") or 0.0
+    kwh_year_equiv = m.get("kwh_year_equiv") or total_kwh
+    unit_cost = m.get("unit_cost")  # $/kWh
+
+    kwh_per_m2_yr = m.get("kwh_per_m2_yr")
+    kwh_per_user_yr = m.get("kwh_per_user_yr")
+
+    if (kwh_per_m2_yr is None or kwh_per_m2_yr == 0) and total_area_m2:
+        kwh_per_m2_yr = (kwh_year_equiv / total_area_m2) if total_area_m2 > 0 else None
+    if (kwh_per_user_yr is None or kwh_per_user_yr == 0) and users_count:
+        kwh_per_user_yr = (kwh_year_equiv / users_count) if users_count > 0 else None
+
+    res["baseline"] = {
+        "period_start": p.get("start"),
+        "period_end": p.get("end"),
+        "kwh_year_equiv": kwh_year_equiv,
+        "unit_cost": unit_cost
+    }
+    res["enpi"] = {
+        "kwh_per_m2_yr": kwh_per_m2_yr,
+        "kwh_per_user_yr": kwh_per_user_yr,
+        "cost_per_kwh": unit_cost
+    }
+
+    notes = invoices_summary.get("notes", []) or invoices_summary.get("notas", [])
+    res["notas"].extend(notes)
+    return res
+
+# ========================= HELPERS DE CARGA =========================
+
+def _normalize_invoice_table(df: pd.DataFrame, source_name: str) -> pd.DataFrame:
+    """Normaliza nombres comunes y crea columnas estándar internas."""
+    cols = {c.lower().strip(): c for c in df.columns}
+    def pick(cands):
+        for k in cands:
+            if k in cols:
+                return cols[k]
+        return None
+
+    c_date  = pick(["fecha","date","periodo","period","billing_period","mes","month"])
+    c_kwh   = pick(["kwh","consumo_kwh","consumption_kwh","energy_kwh","active_energy_kwh"])
+    c_cost  = pick(["costo","cost","importe","monto","amount","total"])
+    c_dem   = pick(["demanda_kw","kw","peak_kw","dem_kw"])
+    c_curr  = pick(["moneda","currency"])
+
+    if c_date:
+        try:
+            df["_date"] = pd.to_datetime(df[c_date], dayfirst=True, errors="coerce")
+        except Exception:
+            df["_date"] = pd.to_datetime(df[c_date], errors="coerce")
+        m = df["_date"].isna() & df[c_date].astype(str).str.match(r"^\d{4}-\d{2}$")
+        if m.any():
+            df.loc[m, "_date"] = pd.to_datetime(df.loc[m, c_date] + "-01", errors="coerce")
+        df["_year_month"] = df["_date"].dt.to_period("M").dt.to_timestamp()
+    else:
+        df["_year_month"] = pd.NaT
+
+    for src, dst in [(c_kwh, "_kwh"), (c_cost, "_cost"), (c_dem, "_demand_kw")]:
+        if src:
+            df[dst] = pd.to_numeric(df[src], errors="coerce")
+        else:
+            df[dst] = None
+
+    df["_currency"] = df[c_curr].astype(str) if c_curr else None
+    df["_source"] = source_name
+    return df
 
 # ========================= PÁGINAS (UI) =========================
 
@@ -622,7 +704,6 @@ def page_portfolio():
         st.download_button("⬇️ Descargar plantilla (CSV)", data=sample_path.read_bytes(),
                            file_name="sample_portfolio_with_typologies.csv")
     else:
-        from io import BytesIO
         buf = BytesIO()
         DEFAULT_SAMPLE.to_csv(buf, index=False)
         st.download_button("⬇️ Descargar plantilla (CSV)", data=buf.getvalue(),
@@ -761,8 +842,8 @@ def page_energy_management():
     invoices = st.file_uploader("Facturas/mediciones (CSV/XLSX o PDF)", type=["csv","xlsx","xls","pdf"], accept_multiple_files=True, key="em_invoices")
 
     with st.expander("Opciones de lectura de facturas", expanded=True):
-        use_ocr = st.toggle("Usar OCR con OpenAI para imágenes (y parser LLM para PDF con texto)", value=True, help="No agrega dependencias. Para PDF escaneado, subí imágenes.")
-        ocr_model = st.selectbox("Modelo para OCR/parse", ["gpt-4o-mini","gpt-4o"], index=0, help="Se usa para OCR de imágenes y parsing semántico de PDFs de solo texto.")
+        use_ocr = st.toggle("Usar OCR con OpenAI para imágenes (y parser LLM para PDF con texto)", value=True, help="Sin dependencias nativas.")
+        ocr_model = st.selectbox("Modelo para OCR/parse", ["gpt-4o-mini","gpt-4o"], index=0, help="Se usa para OCR de imágenes y parsing de PDFs con texto.")
 
     st.markdown("**Política energética, objetivos y plan**")
     energy_policy = st.text_area("Política energética (borrador)", key="em_policy")
@@ -785,7 +866,6 @@ def page_energy_management():
                 if suf == "csv":
                     df = pd.read_csv(f)
                     df["_source"] = name
-                    # normalización básica
                     df = _normalize_invoice_table(df, name)
                     inv_tables.append(df)
                 elif suf in ("xlsx","xlsm","xls"):
@@ -794,7 +874,6 @@ def page_energy_management():
                     df = _normalize_invoice_table(df, name)
                     inv_tables.append(df)
                 elif suf == "pdf":
-                    # Intento 1: extraer texto (no OCR)
                     raw = _extract_text_from_pdf_simple(f)
                     if raw:
                         df = _parse_invoice_text_blocks_with_llm(raw, name, model=ocr_model) if use_ocr else pd.DataFrame()
@@ -840,6 +919,12 @@ def page_energy_management():
             baseline_end=st.session_state.get("em_bend"),
         )
 
+        derived = _em_compute_baseline_from_invoices(
+            invoices_summary=invoices_summary,
+            total_area_m2=total_area_m2,
+            users_count=int(st.session_state.get("em_users", 0))
+        )
+
         dataset = {
             "site": {
                 "organization": org or "Org",
@@ -865,10 +950,12 @@ def page_energy_management():
                 "preview_rows": inv_df.head(100).to_dict(orient="records") if (inv_df is not None and not inv_df.empty) else [],
                 "summary": invoices_summary
             },
+            "derived": derived
         }
         st.session_state["em_last_dataset"] = dataset
         st.success("Dataset guardado en memoria de sesión.")
 
+        # ---- Vista rápida + KPIs + GRÁFICOS ----
         if inv_df is not None and not inv_df.empty:
             st.markdown("**Vista rápida de facturas (normalizadas/OCR):**")
             show_cols = [c for c in ["_year_month","_kwh","_cost","_demand_kw","_currency","_source"] if c in inv_df.columns]
@@ -876,8 +963,43 @@ def page_energy_management():
                 st.dataframe(inv_df[show_cols].rename(columns={
                     "_year_month":"mes","_kwh":"kWh","_cost":"costo","_demand_kw":"demanda_kw","_currency":"moneda","_source":"archivo"
                 }), use_container_width=True)
-            st.markdown("**Resumen:**")
-            st.json(invoices_summary)
+
+            st.markdown("**Baseline y EnPIs (calculados desde facturas):**")
+            c1, c2, c3, c4 = st.columns(4)
+            b = derived.get("baseline", {})
+            e = derived.get("enpi", {})
+            with c1: st.metric("kWh/año (equiv.)", f"{(b.get('kwh_year_equiv') or 0):,.0f}")
+            with c2: st.metric("$/kWh", f"{(e.get('cost_per_kwh') or 0):,.4f}" if e.get("cost_per_kwh") else "–")
+            with c3: st.metric("kWh/m²·año", f"{(e.get('kwh_per_m2_yr') or 0):,.1f}" if e.get("kwh_per_m2_yr") else "–")
+            with c4: st.metric("kWh/usuario·año", f"{(e.get('kwh_per_user_yr') or 0):,.0f}" if e.get("kwh_per_user_yr") else "–")
+
+            # Gráficos mensuales (kWh y Costo)
+            ms = invoices_summary.get("monthly_series", [])
+            if ms:
+                sdf = pd.DataFrame(ms)
+                sdf["month"] = pd.to_datetime(sdf["month"])
+                st.markdown("**Tendencias mensuales**")
+                c5, c6 = st.columns(2)
+                with c5:
+                    st.altair_chart(
+                        alt.Chart(sdf).mark_line(point=True).encode(
+                            x=alt.X("month:T", title="Mes"),
+                            y=alt.Y("kwh:Q", title="kWh"),
+                            tooltip=[alt.Tooltip("month:T", title="Mes", format="%Y-%m"),
+                                     alt.Tooltip("kwh:Q", title="kWh", format=",.0f")]
+                        ).properties(height=280),
+                        use_container_width=True
+                    )
+                with c6:
+                    st.altair_chart(
+                        alt.Chart(sdf).mark_line(point=True).encode(
+                            x=alt.X("month:T", title="Mes"),
+                            y=alt.Y("cost:Q", title="Costo"),
+                            tooltip=[alt.Tooltip("month:T", title="Mes", format="%Y-%m"),
+                                     alt.Tooltip("cost:Q", title="Costo", format=",.2f")]
+                        ).properties(height=280),
+                        use_container_width=True
+                    )
 
     # ---- Parámetros de reporte LLM + branding
     st.markdown("----")
@@ -947,47 +1069,3 @@ def page_energy_management():
             else:
                 st.info("Podés exportar el PDF directamente desde tu navegador.")
                 _em_show_print_button(pdf_html, label="🖨️ Imprimir / Guardar como PDF (A4)")
-
-# ========================= HELPERS DE CARGA =========================
-
-def _normalize_invoice_table(df: pd.DataFrame, source_name: str) -> pd.DataFrame:
-    """Normaliza nombres comunes y crea columnas estándar internas."""
-    cols = {c.lower().strip(): c for c in df.columns}
-    def pick(cands):
-        for k in cands:
-            if k in cols: 
-                return cols[k]
-        return None
-
-    c_date  = pick(["fecha","date","periodo","period","billing_period","mes","month"])
-    c_kwh   = pick(["kwh","consumo_kwh","consumption_kwh","energy_kwh","active_energy_kwh"])
-    c_cost  = pick(["costo","cost","importe","monto","amount","total"])
-    c_dem   = pick(["demanda_kw","kw","peak_kw","dem_kw"])
-    c_curr  = pick(["moneda","currency"])
-
-    if c_date:
-        try:
-            df["_date"] = pd.to_datetime(df[c_date], dayfirst=True, errors="coerce")
-        except Exception:
-            df["_date"] = pd.to_datetime(df[c_date], errors="coerce")
-        m = df["_date"].isna() & df[c_date].astype(str).str.match(r"^\d{4}-\d{2}$")
-        if m.any():
-            df.loc[m, "_date"] = pd.to_datetime(df.loc[m, c_date] + "-01", errors="coerce")
-        df["_year_month"] = df["_date"].dt.to_period("M").dt.to_timestamp()
-    else:
-        df["_year_month"] = pd.NaT
-
-    for src, dst in [(c_kwh, "_kwh"), (c_cost, "_cost"), (c_dem, "_demand_kw")]:
-        if src:
-            df[dst] = pd.to_numeric(df[src], errors="coerce")
-        else:
-            df[dst] = None
-
-    df["_currency"] = df[c_curr].astype(str) if c_curr else None
-    df["_source"] = source_name
-    return df
-
-def _em_parse_invoices(files):
-    """No se usa más (mantenida por compatibilidad)."""
-    return pd.DataFrame(), []
-
