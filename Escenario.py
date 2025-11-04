@@ -108,12 +108,24 @@ def label_tier(score: float):
             "Starter (demo)")
 
 cfg = load_config()
-schemes = list(cfg["schemes"].keys())
+SCHEMES = list(cfg["schemes"].keys())
 
-# ---------------- Secciones como funciones (para navegación lateral) ----------------
+# ---------------- Secciones como funciones (para navegación) ----------------
 def render_tab_proyecto_individual():
-    st.subheader(f"Proyecto individual — {scheme}")
-    metrics = scheme_cfg["metrics"]
+    st.subheader("Proyecto individual")
+
+    # Ajustes generales: viven acá
+    with st.expander("⚙️ Ajustes generales del esquema", expanded=True):
+        scheme = st.selectbox("Esquema", options=SCHEMES, index=0, key="pi_scheme")
+        scheme_cfg = cfg["schemes"][scheme]
+        st.markdown("**Ponderaciones**")
+        st.dataframe(
+            pd.DataFrame([scheme_cfg["weights"]]).T.rename(columns={0:"Peso"})
+            .reset_index().rename(columns={"index":"Categoría"}),
+            hide_index=True, use_container_width=True
+        )
+
+    metrics = cfg["schemes"][st.session_state.get("pi_scheme", SCHEMES[0])]["metrics"]
 
     with st.form("single_project_form", clear_on_submit=False):
         st.write("Ingresá valores y luego presioná **Calcular score**.")
@@ -138,6 +150,7 @@ def render_tab_proyecto_individual():
         submitted = st.form_submit_button("Calcular score", use_container_width=True)
 
     if submitted:
+        scheme_cfg = cfg["schemes"][st.session_state.get("pi_scheme", SCHEMES[0])]
         total, contrib_df, metric_df = compute_scores(inputs, scheme_cfg)
         st.metric("Score total (0–100)", f"{total:.1f}")
         st.success(f"Clasificación demo: **{label_tier(total)}**")
@@ -160,6 +173,11 @@ def render_tab_proyecto_individual():
 
 def render_tab_portfolio():
     st.subheader("Portfolio con tipologías")
+
+    # Selector de esquema local a Portfolio
+    scheme = st.selectbox("Esquema del cálculo para el portfolio", options=SCHEMES, index=0, key="pf_scheme")
+    scheme_cfg = cfg["schemes"][scheme]
+
     st.write("Subí un CSV con `project_name`, `typology` (opcional) y las métricas del esquema.")
     sample_path = Path("data/sample_portfolio_with_typologies.csv")
     if sample_path.exists():
@@ -197,12 +215,11 @@ def render_tab_portfolio():
 
     df["score"] = df.apply(score_row, axis=1)
 
-    with st.sidebar:
-        st.subheader("Filtros de portfolio")
+    with st.expander("Filtros", expanded=True):
         tps = sorted(df["typology"].astype(str).unique().tolist())
-        filt_tp = st.multiselect("Tipologías", options=tps, default=tps, key="tps")
-        q = st.text_input("Buscar proyecto", "", key="q")
-        min_score = st.slider("Score mínimo", 0, 100, 0, 1, key="minsc")
+        filt_tp = st.multiselect("Tipologías", options=tps, default=tps, key="pf_tps")
+        q = st.text_input("Buscar proyecto", "", key="pf_q")
+        min_score = st.slider("Score mínimo", 0, 100, 0, 1, key="pf_minsc")
 
     view = df.copy()
     if filt_tp: view = view[view["typology"].astype(str).isin(filt_tp)]
@@ -243,6 +260,9 @@ def render_tab_portfolio():
 
 def render_tab_metodologia():
     st.subheader("Metodología (demo)")
+    scheme = st.selectbox("Esquema a visualizar", options=SCHEMES, index=0, key="me_scheme")
+    scheme_cfg = cfg["schemes"][scheme]
+
     st.markdown("""
 1) **Normalización** de métricas: `valor / target` → truncado a [0, 1].  
 2) **Score de categoría** = promedio de métricas normalizadas.  
@@ -250,8 +270,11 @@ def render_tab_metodologia():
 4) Clasificación demo: Starter / Bronze / Silver / Gold / Platinum.
     """)
     st.markdown("**Pesos actuales:**")
-    st.dataframe(pd.DataFrame([scheme_cfg["weights"]]).T.rename(columns={0:"Peso"}).reset_index().rename(columns={"index":"Categoría"}),
-                 hide_index=True, use_container_width=True)
+    st.dataframe(
+        pd.DataFrame([scheme_cfg["weights"]]).T.rename(columns={0:"Peso"})
+        .reset_index().rename(columns={"index":"Categoría"}),
+        hide_index=True, use_container_width=True
+    )
     st.markdown("**Métricas activas:**")
     rows = []
     for key, meta in scheme_cfg["metrics"].items():
@@ -452,6 +475,7 @@ def render_tab_energy_management():
 st.title("🌿 GreenScore Prototype")
 st.caption("Demo simplificada LEED / EDGE para prefactibilidad. No oficial.")
 
+# Sidebar: SOLO navegación
 with st.sidebar:
     st.header("Navegación")
     page = st.radio(
@@ -463,16 +487,6 @@ with st.sidebar:
             "Energy Management (ISO 50001)"
         ],
         index=0
-    )
-    st.header("Ajustes generales")
-    scheme = st.selectbox("Esquema", options=schemes, index=0)
-    scheme_cfg = cfg["schemes"][scheme]
-    st.subheader("Ponderaciones")
-    st.dataframe(
-        pd.DataFrame([scheme_cfg["weights"]]).T
-        .rename(columns={0:"Peso"})
-        .reset_index().rename(columns={"index":"Categoría"}),
-        hide_index=True, use_container_width=True
     )
 
 # Router simple según la página elegida
