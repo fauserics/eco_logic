@@ -110,22 +110,8 @@ def label_tier(score: float):
 cfg = load_config()
 schemes = list(cfg["schemes"].keys())
 
-# ---------------- UI ----------------
-st.title("🌿 GreenScore Prototype")
-st.caption("Demo simplificada LEED / EDGE para prefactibilidad. No oficial.")
-
-with st.sidebar:
-    st.header("Ajustes")
-    scheme = st.selectbox("Esquema", options=schemes, index=0)
-    scheme_cfg = cfg["schemes"][scheme]
-    st.subheader("Ponderaciones")
-    st.dataframe(pd.DataFrame([scheme_cfg["weights"]]).T.rename(columns={0:"Peso"}).reset_index().rename(columns={"index":"Categoría"}),
-                 hide_index=True, use_container_width=True)
-
-tabs = st.tabs(["Proyecto individual", "Portfolio", "Metodología"])
-
-# ---------- TAB 1: Proyecto individual (form robusto) ----------
-with tabs[0]:
+# ---------------- Secciones como funciones (para navegación lateral) ----------------
+def render_tab_proyecto_individual():
     st.subheader(f"Proyecto individual — {scheme}")
     metrics = scheme_cfg["metrics"]
 
@@ -172,8 +158,7 @@ with tabs[0]:
             hide_index=True, use_container_width=True
         )
 
-# ---------- TAB 2: Portfolio ----------
-with tabs[1]:
+def render_tab_portfolio():
     st.subheader("Portfolio con tipologías")
     st.write("Subí un CSV con `project_name`, `typology` (opcional) y las métricas del esquema.")
     sample_path = Path("data/sample_portfolio_with_typologies.csv")
@@ -195,69 +180,68 @@ with tabs[1]:
 
     if "project_name" not in df.columns:
         st.error("El CSV debe incluir la columna `project_name`.")
-    else:
-        if "typology" not in df.columns:
-            df["typology"] = "Sin tipología"
-        metrics = list(scheme_cfg["metrics"].keys())
-        missing = [m for m in metrics if m not in df.columns]
-        if missing:
-            st.warning(f"Faltan métricas: {', '.join(missing)}. Se consideran 0 para el cálculo.")
-            for m in missing:
-                df[m] = 0
+        return
 
-        def score_row(r):
-            # compute_scores espera dict con claves de métricas
-            inputs = {k: r.get(k, 0) for k in metrics}
-            return compute_scores(inputs, scheme_cfg)[0]
+    if "typology" not in df.columns:
+        df["typology"] = "Sin tipología"
+    metrics = list(scheme_cfg["metrics"].keys())
+    missing = [m for m in metrics if m not in df.columns]
+    if missing:
+        st.warning(f"Faltan métricas: {', '.join(missing)}. Se consideran 0 para el cálculo.")
+        for m in missing:
+            df[m] = 0
 
-        df["score"] = df.apply(score_row, axis=1)
+    def score_row(r):
+        inputs = {k: r.get(k, 0) for k in metrics}
+        return compute_scores(inputs, scheme_cfg)[0]
 
-        with st.sidebar:
-            st.subheader("Filtros de portfolio")
-            tps = sorted(df["typology"].astype(str).unique().tolist())
-            filt_tp = st.multiselect("Tipologías", options=tps, default=tps, key="tps")
-            q = st.text_input("Buscar proyecto", "", key="q")
-            min_score = st.slider("Score mínimo", 0, 100, 0, 1, key="minsc")
+    df["score"] = df.apply(score_row, axis=1)
 
-        view = df.copy()
-        if filt_tp: view = view[view["typology"].astype(str).isin(filt_tp)]
-        if q.strip(): view = view[view["project_name"].astype(str).str.contains(q, case=False, na=False)]
-        view = view[view["score"] >= min_score]
+    with st.sidebar:
+        st.subheader("Filtros de portfolio")
+        tps = sorted(df["typology"].astype(str).unique().tolist())
+        filt_tp = st.multiselect("Tipologías", options=tps, default=tps, key="tps")
+        q = st.text_input("Buscar proyecto", "", key="q")
+        min_score = st.slider("Score mínimo", 0, 100, 0, 1, key="minsc")
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: st.metric("Proyectos", f"{len(view):,}")
-        with c2: st.metric("Promedio", f"{view['score'].mean():.1f}" if len(view) else "–")
-        with c3: st.metric("Máximo", f"{view['score'].max():.1f}" if len(view) else "–")
-        with c4: st.metric("Tipologías", f"{view['typology'].nunique():,}")
+    view = df.copy()
+    if filt_tp: view = view[view["typology"].astype(str).isin(filt_tp)]
+    if q.strip(): view = view[view["project_name"].astype(str).str.contains(q, case=False, na=False)]
+    view = view[view["score"] >= min_score]
 
-        st.dataframe(view[["project_name","typology","score"] + metrics].sort_values("score", ascending=False),
-                     hide_index=True, use_container_width=True)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: st.metric("Proyectos", f"{len(view):,}")
+    with c2: st.metric("Promedio", f"{view['score'].mean():.1f}" if len(view) else "–")
+    with c3: st.metric("Máximo", f"{view['score'].max():.1f}" if len(view) else "–")
+    with c4: st.metric("Tipologías", f"{view['typology'].nunique():,}")
 
-        if len(view):
-            st.altair_chart(
-                alt.Chart(view).mark_bar().encode(
-                    x=alt.X("score:Q", title="Score"),
-                    y=alt.Y("project_name:N", sort="-x", title="Proyecto"),
-                    color=alt.Color("typology:N", title="Tipología"),
-                    tooltip=[alt.Tooltip("project_name:N"), alt.Tooltip("typology:N"),
-                             alt.Tooltip("score:Q", format=".1f")]
-                ).properties(height=420),
-                use_container_width=True
-            )
-            by_tp = view.groupby("typology", as_index=False)["score"].mean().sort_values("score", ascending=False)
-            st.altair_chart(
-                alt.Chart(by_tp).mark_bar().encode(
-                    x=alt.X("score:Q", title="Promedio por tipología"),
-                    y=alt.Y("typology:N", sort="-x", title="Tipología"),
-                    tooltip=[alt.Tooltip("typology:N"), alt.Tooltip("score:Q", format=".1f")]
-                ).properties(height=320),
-                use_container_width=True
-            )
+    st.dataframe(view[["project_name","typology","score"] + metrics].sort_values("score", ascending=False),
+                 hide_index=True, use_container_width=True)
 
-        st.download_button("⬇️ Descargar resultados (CSV)", data=view.to_csv(index=False), file_name="portfolio_scores.csv")
+    if len(view):
+        st.altair_chart(
+            alt.Chart(view).mark_bar().encode(
+                x=alt.X("score:Q", title="Score"),
+                y=alt.Y("project_name:N", sort="-x", title="Proyecto"),
+                color=alt.Color("typology:N", title="Tipología"),
+                tooltip=[alt.Tooltip("project_name:N"), alt.Tooltip("typology:N"),
+                         alt.Tooltip("score:Q", format=".1f")]
+            ).properties(height=420),
+            use_container_width=True
+        )
+        by_tp = view.groupby("typology", as_index=False)["score"].mean().sort_values("score", ascending=False)
+        st.altair_chart(
+            alt.Chart(by_tp).mark_bar().encode(
+                x=alt.X("score:Q", title="Promedio por tipología"),
+                y=alt.Y("typology:N", sort="-x", title="Tipología"),
+                tooltip=[alt.Tooltip("typology:N"), alt.Tooltip("score:Q", format=".1f")]
+            ).properties(height=320),
+            use_container_width=True
+        )
 
-# ---------- TAB 3: Metodología ----------
-with tabs[2]:
+    st.download_button("⬇️ Descargar resultados (CSV)", data=view.to_csv(index=False), file_name="portfolio_scores.csv")
+
+def render_tab_metodologia():
     st.subheader("Metodología (demo)")
     st.markdown("""
 1) **Normalización** de métricas: `valor / target` → truncado a [0, 1].  
@@ -276,29 +260,9 @@ with tabs[2]:
                      "Target": meta.get("target","")})
     st.dataframe(pd.DataFrame(rows).sort_values(["Categoría","Etiqueta"]), hide_index=True, use_container_width=True)
 
-st.caption("© EcoLogic – Prototipo orientado a preventa LEED/EDGE.")
-
 # ======================================================================
 # ===================  MÓDULO ENERGY MANAGEMENT ISO 50001  =============
 # ======================================================================
-
-# Nota: no se modifica nada del bloque superior; este módulo se renderiza
-# como un conjunto de pestañas separado, situado debajo en la app.
-def _em_safe_imports():
-    # Imports locales para evitar conflictos
-    import os
-    import base64
-    from datetime import datetime
-    from typing import List, Dict, Any
-
-    import pandas as pd
-    import streamlit as st
-    try:
-        import openai  # SDK clásico (v0) o compat con envs que lo tengan
-    except Exception:
-        openai = None
-    return os, base64, datetime, List, Dict, Any, pd, st, openai
-
 
 def _em_download_button_html(html: str, filename: str, label: str = "Descargar reporte (HTML)"):
     import base64
@@ -306,12 +270,9 @@ def _em_download_button_html(html: str, filename: str, label: str = "Descargar r
     href = f'<a download="{filename}" href="data:text/html;base64,{b64}">{label}</a>'
     st.markdown(href, unsafe_allow_html=True)
 
-
 def _em_parse_invoices(files):
-    import pandas as pd
-    import os
-    tables = []
-    saved = []
+    import pandas as pd, os
+    tables, saved = [], []
     for f in (files or []):
         saved.append(getattr(f, "name", ""))
         suf = os.path.splitext(f.name)[1].lower()
@@ -327,21 +288,17 @@ def _em_parse_invoices(files):
         if not df.empty:
             df["_source"] = f.name
             tables.append(df)
-    if tables:
-        return pd.concat(tables, ignore_index=True), saved
-    return pd.DataFrame(), saved
-
+    return (pd.concat(tables, ignore_index=True) if tables else pd.DataFrame(), saved)
 
 def _em_openai_report(dataset: dict, brand_color: str, logo_url: str) -> str:
-    import os
+    import os, json
     try:
         from textwrap import dedent
     except Exception:
         dedent = lambda x: x
-
     api_key = os.getenv("OPENAI_API_KEY")
+
     try:
-        # Intento con SDK moderno
         from openai import OpenAI
         if api_key:
             client = OpenAI(api_key=api_key)
@@ -363,12 +320,8 @@ def _em_openai_report(dataset: dict, brand_color: str, logo_url: str) -> str:
     except Exception:
         pass
 
-    # Fallback genérico: texto estático mínimo si no hay API
-    return (
-        "AVISO: OPENAI_API_KEY no configurada o SDK no disponible. "
-        "Incluye aquí el contenido del informe basado en los datos cargados."
-    )
-
+    return ("AVISO: OPENAI_API_KEY no configurada o SDK no disponible. "
+            "Incluye aquí el contenido del informe basado en los datos cargados.")
 
 def _em_render_report_html(org: str, site: str, generated_at: str, llm_text: str,
                            brand_color: str, logo_url: str) -> str:
@@ -399,109 +352,137 @@ def _em_render_report_html(org: str, site: str, generated_at: str, llm_text: str
     """
     return f"<!doctype html><html lang='es'><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>Reporte Energético – {org} / {site}</title>{style}</head><body>{body}</body></html>"
 
+def render_tab_energy_management():
+    st.subheader("ISO 50001 – Energy Management")
 
-def render_energy_management_iso50001():
-    # Render en un set de pestañas propio, sin alterar las ya creadas arriba
-    st.markdown("---")
-    em_tabs = st.tabs(["Energy Management (ISO 50001)"])
+    col1, col2, col3 = st.columns([2, 2, 1])
+    org = col1.text_input("Organización", placeholder="Fauser ICS", key="em_org")
+    site = col2.text_input("Sitio/Edificio", placeholder="HQ – Quilmes", key="em_site")
+    users_count = col3.number_input("Nº usuarios", min_value=0, value=0, step=1, key="em_users")
 
-    with em_tabs[0]:
-        st.subheader("ISO 50001 – Energy Management")
+    col4, col5 = st.columns(2)
+    address = col4.text_input("Dirección", placeholder="Calle, Ciudad, País", key="em_addr")
+    climate_zone = col5.text_input("Zona climática", placeholder="ASHRAE/IRAM…", key="em_zone")
 
-        col1, col2, col3 = st.columns([2, 2, 1])
-        org = col1.text_input("Organización", placeholder="Fauser ICS")
-        site = col2.text_input("Sitio/Edificio", placeholder="HQ – Quilmes")
-        users_count = col3.number_input("Nº usuarios", min_value=0, value=0, step=1)
+    col6, col7 = st.columns(2)
+    baseline_start = col6.date_input("Baseline desde", value=None, key="em_bstart")
+    baseline_end = col7.date_input("Baseline hasta", value=None, key="em_bend")
 
-        col4, col5 = st.columns(2)
-        address = col4.text_input("Dirección", placeholder="Calle, Ciudad, País")
-        climate_zone = col5.text_input("Zona climática", placeholder="ASHRAE/IRAM…")
+    st.markdown("**Usos significativos de energía (SEUs) y tipologías**")
+    seus = st.text_area("SEUs (uno por línea)", "HVAC\nIluminación\nProcesos\nTI/Datacenter", key="em_seus")
+    enpis = st.text_area("EnPIs candidatos (uno por línea)", "kWh/m2\nkWh/usuario\nEUI\nFactor de carga", key="em_enpis")
 
-        col6, col7 = st.columns(2)
-        baseline_start = col6.date_input("Baseline desde", value=None)
-        baseline_end = col7.date_input("Baseline hasta", value=None)
+    st.markdown("**Perfiles de uso**")
+    uses_df = st.data_editor(
+        pd.DataFrame([{"tipología":"Oficinas","area_m2":1000,"horas_operación_semana":50}]),
+        num_rows="dynamic", use_container_width=True, key="em_uses_df"
+    )
 
-        st.markdown("**Usos significativos de energía (SEUs) y tipologías**")
-        seus = st.text_area("SEUs (uno por línea)", "HVAC\nIluminación\nProcesos\nTI/Datacenter")
-        enpis = st.text_area("EnPIs candidatos (uno por línea)", "kWh/m2\nkWh/usuario\nEUI\nFactor de carga")
+    occ_col1, occ_col2 = st.columns(2)
+    peak_occupancy = int(occ_col1.number_input("Ocupación pico", 0, 1_000_000, 0, key="em_peak"))
+    occupancy_pattern = occ_col2.text_input("Patrón de ocupación", "L–V 9–18, sáb reducido", key="em_occpat")
 
-        st.markdown("**Perfiles de uso**")
-        uses_df = st.data_editor(
-            pd.DataFrame([{"tipología":"Oficinas","area_m2":1000,"horas_operación_semana":50}]),
-            num_rows="dynamic", use_container_width=True
-        )
+    st.markdown("**Evidencias**")
+    photos = st.file_uploader("Fotos (PNG/JPG)", type=["png","jpg","jpeg"], accept_multiple_files=True, key="em_photos")
+    invoices = st.file_uploader("Facturas/mediciones (CSV/XLSX preferido; PDF/IMG como evidencia)",
+                                type=["csv","xlsx","xls","pdf","png","jpg","jpeg"], accept_multiple_files=True, key="em_invoices")
 
-        occ_col1, occ_col2 = st.columns(2)
-        peak_occupancy = int(occ_col1.number_input("Ocupación pico", 0, 1_000_000, 0))
-        occupancy_pattern = occ_col2.text_input("Patrón de ocupación", "L–V 9–18, sáb reducido")
+    st.markdown("**Política energética, objetivos y plan**")
+    energy_policy = st.text_area("Política energética (borrador)", key="em_policy")
+    objectives = st.text_area("Objetivos/Metas (uno por línea)", "Reducir EUI 10% en 12 meses\nPF ≥ 0.97", key="em_objs")
+    action_plan = st.text_area("Plan de acción (uno por línea)", "LED\nOptimización consignas HVAC\nMantenimiento VFD", key="em_plan")
 
-        st.markdown("**Evidencias**")
-        photos = st.file_uploader("Fotos (PNG/JPG)", type=["png","jpg","jpeg"], accept_multiple_files=True)
-        invoices = st.file_uploader("Facturas/mediciones (CSV/XLSX preferido; PDF/IMG como evidencia)",
-                                    type=["csv","xlsx","xls","pdf","png","jpg","jpeg"], accept_multiple_files=True)
+    if "em_last_dataset" not in st.session_state:
+        st.session_state["em_last_dataset"] = None
 
-        st.markdown("**Política energética, objetivos y plan**")
-        energy_policy = st.text_area("Política energética (borrador)")
-        objectives = st.text_area("Objetivos/Metas (uno por línea)", "Reducir EUI 10% en 12 meses\nPF ≥ 0.97")
-        action_plan = st.text_area("Plan de acción (uno por línea)", "LED\nOptimización consignas HVAC\nMantenimiento VFD")
+    if st.button("Guardar dataset del sitio (memoria de sesión)", key="em_save"):
+        inv_df, saved_files = _em_parse_invoices(invoices)
+        dataset = {
+            "site": {
+                "organization": org or "Org",
+                "site_name": site or "Site",
+                "address": address,
+                "climate_zone": climate_zone,
+                "baseline_start": str(baseline_start) if baseline_start else None,
+                "baseline_end": str(baseline_end) if baseline_end else None,
+                "energy_policy": energy_policy,
+                "significant_energy_uses": [s.strip() for s in (seus or "").splitlines() if s.strip()],
+                "enpis": [s.strip() for s in (enpis or "").splitlines() if s.strip()],
+                "objectives": [s.strip() for s in (objectives or "").splitlines() if s.strip()],
+                "action_plan": [s.strip() for s in (action_plan or "").splitlines() if s.strip()],
+            },
+            "users_profile": {
+                "users_count": users_count,
+                "peak_occupancy": peak_occupancy,
+                "occupancy_pattern": occupancy_pattern,
+            },
+            "building_uses": uses_df.to_dict("records"),
+            "evidence_files": [getattr(p, "name", str(p)) for p in (photos or [])] + saved_files,
+            "invoices_preview": inv_df.head(100).to_dict(orient="records") if not inv_df.empty else [],
+        }
+        st.session_state["em_last_dataset"] = dataset
+        st.success("Dataset guardado en memoria de sesión.")
+        if not inv_df.empty:
+            st.dataframe(inv_df.head(50), use_container_width=True)
 
-        # Procesamiento y guardado en memoria de sesión (no tocamos FS del prototipo base)
-        if "em_last_dataset" not in st.session_state:
-            st.session_state["em_last_dataset"] = None
+    st.markdown("----")
+    st.markdown("#### Generar reporte con OpenAI")
+    brand_color = st.color_picker("Color institucional", "#0B8C6B", key="em_color")
+    logo_url = st.text_input("Logo (URL pública opcional)", key="em_logo")
 
-        if st.button("Guardar dataset del sitio (memoria de sesión)"):
-            inv_df, saved_files = _em_parse_invoices(invoices)
-            dataset = {
-                "site": {
-                    "organization": org or "Org",
-                    "site_name": site or "Site",
-                    "address": address,
-                    "climate_zone": climate_zone,
-                    "baseline_start": str(baseline_start) if baseline_start else None,
-                    "baseline_end": str(baseline_end) if baseline_end else None,
-                    "energy_policy": energy_policy,
-                    "significant_energy_uses": [s.strip() for s in (seus or "").splitlines() if s.strip()],
-                    "enpis": [s.strip() for s in (enpis or "").splitlines() if s.strip()],
-                    "objectives": [s.strip() for s in (objectives or "").splitlines() if s.strip()],
-                    "action_plan": [s.strip() for s in (action_plan or "").splitlines() if s.strip()],
-                },
-                "users_profile": {
-                    "users_count": users_count,
-                    "peak_occupancy": peak_occupancy,
-                    "occupancy_pattern": occupancy_pattern,
-                },
-                "building_uses": uses_df.to_dict("records"),
-                "evidence_files": [getattr(p, "name", str(p)) for p in (photos or [])] + saved_files,
-                "invoices_preview": inv_df.head(100).to_dict(orient="records") if not inv_df.empty else [],
-            }
-            st.session_state["em_last_dataset"] = dataset
-            st.success("Dataset guardado en memoria de sesión.")
-            if not inv_df.empty:
-                st.dataframe(inv_df.head(50), use_container_width=True)
+    if st.button("Generar reporte ISO 50001", key="em_report"):
+        if not st.session_state.get("em_last_dataset"):
+            st.error("No hay dataset guardado para generar el reporte.")
+        else:
+            dataset = st.session_state["em_last_dataset"]
+            llm_text = _em_openai_report(dataset, brand_color, logo_url)
+            html = _em_render_report_html(
+                org=dataset["site"]["organization"],
+                site=dataset["site"]["site_name"],
+                generated_at=pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+                llm_text=llm_text,
+                brand_color=brand_color,
+                logo_url=logo_url
+            )
+            _em_download_button_html(html, "energy_report.html")
+            st.markdown("Vista previa:")
+            st.components.v1.html(html, height=800, scrolling=True)
 
-        st.markdown("----")
-        st.markdown("#### Generar reporte con OpenAI")
-        brand_color = st.color_picker("Color institucional", "#0B8C6B")
-        logo_url = st.text_input("Logo (URL pública opcional)")
+# ---------------- UI principal ----------------
+st.title("🌿 GreenScore Prototype")
+st.caption("Demo simplificada LEED / EDGE para prefactibilidad. No oficial.")
 
-        if st.button("Generar reporte ISO 50001"):
-            if not st.session_state.get("em_last_dataset"):
-                st.error("No hay dataset guardado para generar el reporte.")
-            else:
-                dataset = st.session_state["em_last_dataset"]
-                llm_text = _em_openai_report(dataset, brand_color, logo_url)
-                html = _em_render_report_html(
-                    org=dataset["site"]["organization"],
-                    site=dataset["site"]["site_name"],
-                    generated_at=pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
-                    llm_text=llm_text,
-                    brand_color=brand_color,
-                    logo_url=logo_url
-                )
-                _em_download_button_html(html, "energy_report.html")
-                st.markdown("Vista previa:")
-                st.components.v1.html(html, height=800, scrolling=True)
+with st.sidebar:
+    st.header("Navegación")
+    page = st.radio(
+        "Secciones",
+        options=[
+            "Proyecto individual",
+            "Portfolio",
+            "Metodología",
+            "Energy Management (ISO 50001)"
+        ],
+        index=0
+    )
+    st.header("Ajustes generales")
+    scheme = st.selectbox("Esquema", options=schemes, index=0)
+    scheme_cfg = cfg["schemes"][scheme]
+    st.subheader("Ponderaciones")
+    st.dataframe(
+        pd.DataFrame([scheme_cfg["weights"]]).T
+        .rename(columns={0:"Peso"})
+        .reset_index().rename(columns={"index":"Categoría"}),
+        hide_index=True, use_container_width=True
+    )
 
+# Router simple según la página elegida
+if page == "Proyecto individual":
+    render_tab_proyecto_individual()
+elif page == "Portfolio":
+    render_tab_portfolio()
+elif page == "Metodología":
+    render_tab_metodologia()
+else:  # Energy Management
+    render_tab_energy_management()
 
-# Render del módulo (bloque adicional, no interfiere con lo anterior)
-render_energy_management_iso50001()
+st.caption("© EcoLogic – Prototipo orientado a preventa LEED/EDGE.")
