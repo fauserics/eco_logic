@@ -7,6 +7,14 @@ import streamlit as st
 
 st.set_page_config(page_title="GreenScore Prototype", page_icon="🌿", layout="wide")
 
+# --- Ocultar navegación multipágina nativa + separadores para evitar duplicados ---
+st.markdown("""
+<style>
+section[data-testid="stSidebarNav"] { display: none !important; }  /* oculta 'Escenario/Portfolio/Methodology' nativo */
+div[data-testid="stSidebar"] hr { display:none !important; }       /* quita línea divisoria */
+</style>
+""", unsafe_allow_html=True)
+
 # ---------------- fallbacks ----------------
 DEFAULT_CFG = {
     "schemes": {
@@ -110,11 +118,11 @@ def label_tier(score: float):
 cfg = load_config()
 SCHEMES = list(cfg["schemes"].keys())
 
-# ---------------- Secciones como funciones (para navegación) ----------------
+# ---------------- Secciones como funciones ----------------
 def render_tab_proyecto_individual():
     st.subheader("Proyecto individual")
 
-    # Ajustes generales: viven acá
+    # Ajustes generales (acá, no en el sidebar)
     with st.expander("⚙️ Ajustes generales del esquema", expanded=True):
         scheme = st.selectbox("Esquema", options=SCHEMES, index=0, key="pi_scheme")
         scheme_cfg = cfg["schemes"][scheme]
@@ -174,7 +182,7 @@ def render_tab_proyecto_individual():
 def render_tab_portfolio():
     st.subheader("Portfolio con tipologías")
 
-    # Selector de esquema local a Portfolio
+    # Selector de esquema local
     scheme = st.selectbox("Esquema del cálculo para el portfolio", options=SCHEMES, index=0, key="pf_scheme")
     scheme_cfg = cfg["schemes"][scheme]
 
@@ -475,11 +483,10 @@ def render_tab_energy_management():
 st.title("🌿 GreenScore Prototype")
 st.caption("Demo simplificada LEED / EDGE para prefactibilidad. No oficial.")
 
-# Sidebar: SOLO navegación
+# Sidebar: SOLO el radio de navegación (sin título/labels extra)
 with st.sidebar:
-    st.header("Navegación")
     page = st.radio(
-        "Secciones",
+        label="",  # sin título
         options=[
             "Proyecto individual",
             "Portfolio",
