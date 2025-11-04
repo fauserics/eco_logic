@@ -277,3 +277,231 @@ with tabs[2]:
     st.dataframe(pd.DataFrame(rows).sort_values(["Categoría","Etiqueta"]), hide_index=True, use_container_width=True)
 
 st.caption("© EcoLogic – Prototipo orientado a preventa LEED/EDGE.")
+
+# ======================================================================
+# ===================  MÓDULO ENERGY MANAGEMENT ISO 50001  =============
+# ======================================================================
+
+# Nota: no se modifica nada del bloque superior; este módulo se renderiza
+# como un conjunto de pestañas separado, situado debajo en la app.
+def _em_safe_imports():
+    # Imports locales para evitar conflictos
+    import os
+    import base64
+    from datetime import datetime
+    from typing import List, Dict, Any
+
+    import pandas as pd
+    import streamlit as st
+    try:
+        import openai  # SDK clásico (v0) o compat con envs que lo tengan
+    except Exception:
+        openai = None
+    return os, base64, datetime, List, Dict, Any, pd, st, openai
+
+
+def _em_download_button_html(html: str, filename: str, label: str = "Descargar reporte (HTML)"):
+    import base64
+    b64 = base64.b64encode(html.encode("utf-8")).decode()
+    href = f'<a download="{filename}" href="data:text/html;base64,{b64}">{label}</a>'
+    st.markdown(href, unsafe_allow_html=True)
+
+
+def _em_parse_invoices(files):
+    import pandas as pd
+    import os
+    tables = []
+    saved = []
+    for f in (files or []):
+        saved.append(getattr(f, "name", ""))
+        suf = os.path.splitext(f.name)[1].lower()
+        try:
+            if suf == ".csv":
+                df = pd.read_csv(f)
+            elif suf in (".xlsx", ".xlsm", ".xls"):
+                df = pd.read_excel(f)
+            else:
+                df = pd.DataFrame()
+        except Exception:
+            df = pd.DataFrame()
+        if not df.empty:
+            df["_source"] = f.name
+            tables.append(df)
+    if tables:
+        return pd.concat(tables, ignore_index=True), saved
+    return pd.DataFrame(), saved
+
+
+def _em_openai_report(dataset: dict, brand_color: str, logo_url: str) -> str:
+    import os
+    try:
+        from textwrap import dedent
+    except Exception:
+        dedent = lambda x: x
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    try:
+        # Intento con SDK moderno
+        from openai import OpenAI
+        if api_key:
+            client = OpenAI(api_key=api_key)
+            system = dedent("""
+                Eres consultor sénior en gestión de energía (ISO 50001).
+                Entrega informe claro y accionable: Resumen Ejecutivo; Alcance/Contexto;
+                Revisión Energética; Línea de Base y EnPIs; Oportunidades y Medidas; Estimación de Ahorros
+                (kWh/año, %, costo, payback simple); Plan de Implementación; Monitoreo & Verificación; Riesgos.
+                Responde en español y con tono institucional.
+            """)
+            user = f"DATASET JSON:\n{json.dumps(dataset, ensure_ascii=False)}"
+            out = client.chat.completions.create(
+                model="gpt-4o-mini",
+                temperature=0.2,
+                messages=[{"role": "system", "content": system},
+                          {"role": "user", "content": user}]
+            )
+            return out.choices[0].message.content
+    except Exception:
+        pass
+
+    # Fallback genérico: texto estático mínimo si no hay API
+    return (
+        "AVISO: OPENAI_API_KEY no configurada o SDK no disponible. "
+        "Incluye aquí el contenido del informe basado en los datos cargados."
+    )
+
+
+def _em_render_report_html(org: str, site: str, generated_at: str, llm_text: str,
+                           brand_color: str, logo_url: str) -> str:
+    style = f"""
+    <style>
+      :root {{ --brand: {brand_color or '#0B8C6B'}; }}
+      body {{ font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif; color:#1b1f24; }}
+      .header {{ display:flex; align-items:center; gap:16px; border-bottom:3px solid var(--brand); padding-bottom:12px; margin-bottom:24px; }}
+      .badge {{ background: var(--brand); color:#fff; padding:4px 10px; border-radius:999px; font-size:12px; margin-left:auto; }}
+      .meta {{ color:#667085; font-size:12px; }}
+      .section h2 {{ color: var(--brand); border-bottom:1px solid #eaecef; padding-bottom:6px; }}
+      .prose p {{ line-height:1.6; }}
+    </style>
+    """
+    logo_html = f'<img src="{logo_url}" alt="Logo" height="42"/>' if logo_url else ""
+    body = f"""
+    <div class="header">
+      {logo_html}
+      <div>
+        <h1>Reporte de Gestión de la Energía (ISO 50001)</h1>
+        <div class="meta">{org} – {site} · Generado: {generated_at}</div>
+      </div>
+      <span class="badge">Green&nbsp;Score</span>
+    </div>
+    <div class="section prose">
+      {llm_text.replace('\n','<br/>')}
+    </div>
+    """
+    return f"<!doctype html><html lang='es'><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>Reporte Energético – {org} / {site}</title>{style}</head><body>{body}</body></html>"
+
+
+def render_energy_management_iso50001():
+    # Render en un set de pestañas propio, sin alterar las ya creadas arriba
+    st.markdown("---")
+    em_tabs = st.tabs(["Energy Management (ISO 50001)"])
+
+    with em_tabs[0]:
+        st.subheader("ISO 50001 – Energy Management")
+
+        col1, col2, col3 = st.columns([2, 2, 1])
+        org = col1.text_input("Organización", placeholder="Fauser ICS")
+        site = col2.text_input("Sitio/Edificio", placeholder="HQ – Quilmes")
+        users_count = col3.number_input("Nº usuarios", min_value=0, value=0, step=1)
+
+        col4, col5 = st.columns(2)
+        address = col4.text_input("Dirección", placeholder="Calle, Ciudad, País")
+        climate_zone = col5.text_input("Zona climática", placeholder="ASHRAE/IRAM…")
+
+        col6, col7 = st.columns(2)
+        baseline_start = col6.date_input("Baseline desde", value=None)
+        baseline_end = col7.date_input("Baseline hasta", value=None)
+
+        st.markdown("**Usos significativos de energía (SEUs) y tipologías**")
+        seus = st.text_area("SEUs (uno por línea)", "HVAC\nIluminación\nProcesos\nTI/Datacenter")
+        enpis = st.text_area("EnPIs candidatos (uno por línea)", "kWh/m2\nkWh/usuario\nEUI\nFactor de carga")
+
+        st.markdown("**Perfiles de uso**")
+        uses_df = st.data_editor(
+            pd.DataFrame([{"tipología":"Oficinas","area_m2":1000,"horas_operación_semana":50}]),
+            num_rows="dynamic", use_container_width=True
+        )
+
+        occ_col1, occ_col2 = st.columns(2)
+        peak_occupancy = int(occ_col1.number_input("Ocupación pico", 0, 1_000_000, 0))
+        occupancy_pattern = occ_col2.text_input("Patrón de ocupación", "L–V 9–18, sáb reducido")
+
+        st.markdown("**Evidencias**")
+        photos = st.file_uploader("Fotos (PNG/JPG)", type=["png","jpg","jpeg"], accept_multiple_files=True)
+        invoices = st.file_uploader("Facturas/mediciones (CSV/XLSX preferido; PDF/IMG como evidencia)",
+                                    type=["csv","xlsx","xls","pdf","png","jpg","jpeg"], accept_multiple_files=True)
+
+        st.markdown("**Política energética, objetivos y plan**")
+        energy_policy = st.text_area("Política energética (borrador)")
+        objectives = st.text_area("Objetivos/Metas (uno por línea)", "Reducir EUI 10% en 12 meses\nPF ≥ 0.97")
+        action_plan = st.text_area("Plan de acción (uno por línea)", "LED\nOptimización consignas HVAC\nMantenimiento VFD")
+
+        # Procesamiento y guardado en memoria de sesión (no tocamos FS del prototipo base)
+        if "em_last_dataset" not in st.session_state:
+            st.session_state["em_last_dataset"] = None
+
+        if st.button("Guardar dataset del sitio (memoria de sesión)"):
+            inv_df, saved_files = _em_parse_invoices(invoices)
+            dataset = {
+                "site": {
+                    "organization": org or "Org",
+                    "site_name": site or "Site",
+                    "address": address,
+                    "climate_zone": climate_zone,
+                    "baseline_start": str(baseline_start) if baseline_start else None,
+                    "baseline_end": str(baseline_end) if baseline_end else None,
+                    "energy_policy": energy_policy,
+                    "significant_energy_uses": [s.strip() for s in (seus or "").splitlines() if s.strip()],
+                    "enpis": [s.strip() for s in (enpis or "").splitlines() if s.strip()],
+                    "objectives": [s.strip() for s in (objectives or "").splitlines() if s.strip()],
+                    "action_plan": [s.strip() for s in (action_plan or "").splitlines() if s.strip()],
+                },
+                "users_profile": {
+                    "users_count": users_count,
+                    "peak_occupancy": peak_occupancy,
+                    "occupancy_pattern": occupancy_pattern,
+                },
+                "building_uses": uses_df.to_dict("records"),
+                "evidence_files": [getattr(p, "name", str(p)) for p in (photos or [])] + saved_files,
+                "invoices_preview": inv_df.head(100).to_dict(orient="records") if not inv_df.empty else [],
+            }
+            st.session_state["em_last_dataset"] = dataset
+            st.success("Dataset guardado en memoria de sesión.")
+            if not inv_df.empty:
+                st.dataframe(inv_df.head(50), use_container_width=True)
+
+        st.markdown("----")
+        st.markdown("#### Generar reporte con OpenAI")
+        brand_color = st.color_picker("Color institucional", "#0B8C6B")
+        logo_url = st.text_input("Logo (URL pública opcional)")
+
+        if st.button("Generar reporte ISO 50001"):
+            if not st.session_state.get("em_last_dataset"):
+                st.error("No hay dataset guardado para generar el reporte.")
+            else:
+                dataset = st.session_state["em_last_dataset"]
+                llm_text = _em_openai_report(dataset, brand_color, logo_url)
+                html = _em_render_report_html(
+                    org=dataset["site"]["organization"],
+                    site=dataset["site"]["site_name"],
+                    generated_at=pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+                    llm_text=llm_text,
+                    brand_color=brand_color,
+                    logo_url=logo_url
+                )
+                _em_download_button_html(html, "energy_report.html")
+                st.markdown("Vista previa:")
+                st.components.v1.html(html, height=800, scrolling=True)
+
+
+# Render del módulo (bloque adicional, no interfiere con lo anterior)
+render_energy_management_iso50001()
