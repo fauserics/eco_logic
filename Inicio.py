@@ -3,7 +3,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Inicio – GreenScore", page_icon="🌿", layout="wide")
 
-# Asegurar que el nav multipágina esté visible (por si quedó CSS previo)
+# Sidebar visible y diseño compacto
 st.markdown("""
 <style>
 section[data-testid="stSidebarNav"] { display:block !important; visibility:visible !important; }
@@ -18,7 +18,7 @@ st.write(
     "Integra scoring tipo **LEED/EDGE**, análisis por tipologías y el módulo "
     "**Energy Management (ISO 50001)**: carga de fotos y facturas/mediciones, "
     "definición de línea de base y EnPIs, número de usuarios y **reporte institucional** "
-    "con OpenAI (HTML descargable) con estimación de ahorros."
+    "con OpenAI (HTML y PDF A4 con portada, índice dinámico y numeración)."
 )
 
 # Imagen portada (sin scroll)
@@ -41,4 +41,4 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.caption("© EcoLogic – GreenScore · Demo con módulo ISO 50001 y reporte LLM.")
+st.caption("© EcoLogic – GreenScore · Demo con módulo ISO 50001, reporte LLM y exportación PDF.")
