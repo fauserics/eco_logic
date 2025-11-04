@@ -4,7 +4,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-# ---------------- fallbacks ----------------
+# ========================= CONFIG / DEFAULTS =========================
+
 DEFAULT_CFG = {
     "schemes": {
         "LEED": {
@@ -103,7 +104,8 @@ def label_tier(score: float):
             "Bronze (demo)" if score>=50 else
             "Starter (demo)")
 
-# ====== Componentes de páginas ======
+# ========================= PAGES =========================
+
 def page_proyecto_individual():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
@@ -179,8 +181,10 @@ def page_portfolio():
 
     file = st.file_uploader("Subir CSV", type=["csv"])
     if file:
-        try: df = pd.read_csv(file)
-        except Exception: df = pd.read_csv(file, encoding="utf-8", errors="ignore")
+        try:
+            df = pd.read_csv(file)
+        except Exception:
+            df = pd.read_csv(file, encoding="utf-8", errors="ignore")
     else:
         df = DEFAULT_SAMPLE.copy()
 
@@ -194,11 +198,13 @@ def page_portfolio():
     missing = [m for m in metrics if m not in df.columns]
     if missing:
         st.warning(f"Faltan métricas: {', '.join(missing)}. Se consideran 0.")
-        for m in missing: df[m] = 0
+        for m in missing:
+            df[m] = 0
 
     def score_row(r):
         inputs = {k: r.get(k, 0) for k in metrics}
         return compute_scores(inputs, scheme_cfg)[0]
+
     df["score"] = df.apply(score_row, axis=1)
 
     with st.expander("Filtros", expanded=True):
@@ -248,12 +254,12 @@ def page_metodologia():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
 
-    st.subheader("Metodología (demo)")
+    st.subheader("Metodologia (demo)")
     scheme = st.selectbox("Esquema a visualizar", options=SCHEMES, index=0, key="me_scheme")
     scheme_cfg = cfg["schemes"][scheme]
 
     st.markdown("""
-1) **Normalización**: `valor / target` → truncado a [0, 1].  
+1) **Normalización**: `valor / target` truncado a [0, 1].  
 2) **Score de categoría** = promedio de métricas normalizadas.  
 3) **Score total** = suma ponderada de categorías × 100.  
 4) Clasificación demo: Starter / Bronze / Silver / Gold / Platinum.
@@ -268,9 +274,11 @@ def page_metodologia():
         rows.append({"Clave": key, "Etiqueta": meta.get("label", key),
                      "Categoría": meta.get("category",""), "Tipo": meta.get("type",""),
                      "Target": meta.get("target","")})
-    st.dataframe(pd.DataFrame(rows).sort_values(["Categoría","Etiqueta"]), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(rows).sort_values(["Categoría","Etiqueta"]),
+                 hide_index=True, use_container_width=True)
 
-# ====== ISO 50001 ======
+# ========================= ISO 50001 MODULE =========================
+
 def _em_download_button_html(html: str, filename: str, label: str = "Descargar reporte (HTML)"):
     import base64
     b64 = base64.b64encode(html.encode("utf-8")).decode()
@@ -311,7 +319,8 @@ def _em_openai_report(dataset: dict, brand_color: str, logo_url: str) -> str:
         )
         return out.choices[0].message.content
     except Exception:
-        return "AVISO: OPENAI_API_KEY no configurada o SDK no disponible."
+        return ("AVISO: OPENAI_API_KEY no configurada o SDK no disponible. "
+                "Incluye aquí el contenido del informe basado en los datos cargados.")
 
 def _em_render_report_html(org: str, site: str, generated_at: str, llm_text: str,
                            brand_color: str, logo_url: str) -> str:
