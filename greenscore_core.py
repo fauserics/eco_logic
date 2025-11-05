@@ -345,52 +345,95 @@ def _em_openai_report(dataset: dict, brand_color: str, logo_url: str,
         return (f"AVISO: No fue posible llamar a OpenAI ({e}). "
                 "Revisá el modelo, la versión del SDK y la clave.")
 
-# --------- OCR IMAGEN ---------
+# --------- OCR IMAGEN (ROBUSTO) ---------
 
 def _ocr_image_invoice_with_openai(file_bytes: bytes, filename: str, model: str = "gpt-4o-mini"):
-    import base64
+    """
+    OCR de una imagen (PNG/JPG) con OpenAI Vision → filas mensuales.
+    Preprocesa (resize<=1200px, grises, contraste/umbral), fuerza JSON estricto y hace retries.
+    Guarda /tmp/last_ocr_raw.json si falla el parseo.
+    """
+    import base64, time, json as _json
+    from PIL import Image, ImageOps
+
+    def _preprocess(img_bytes: bytes) -> bytes:
+        with Image.open(BytesIO(img_bytes)) as im:
+            im = im.convert("L")
+            max_side = 1200
+            w, h = im.size
+            scale = min(max_side / max(w, h), 1.0)
+            if scale < 1.0:
+                im = im.resize((int(w*scale), int(h*scale)), Image.LANCZOS)
+            im = ImageOps.autocontrast(im)
+            # umbral suave: mejora contraste pero evita blanco/negro agresivo
+            im = ImageOps.invert(ImageOps.invert(im).point(lambda p: 255 if p > 200 else (0 if p < 30 else p)))
+            buf = BytesIO()
+            im.save(buf, format="PNG", optimize=True)
+            return buf.getvalue()
+
     try:
         client = _openai_client()
     except Exception as e:
         st.warning(f"OCR no disponible: {e}")
         return pd.DataFrame()
 
-    b64 = base64.b64encode(file_bytes).decode("utf-8")
-    ext = filename.split(".")[-1].lower()
-    image_url = f"data:image/{ext if ext in ('jpg','jpeg','png') else 'png'};base64,{b64}"
+    pre = _preprocess(file_bytes)
+    b64 = base64.b64encode(pre).decode("utf-8")
+    image_url = f"data:image/png;base64,{b64}"
 
     prompt = (
-        "Extrae datos de la factura de energía. Responde en JSON con una lista 'rows', "
-        "cada row con: year_month (YYYY-MM), kwh (número), cost (número), "
-        "demand_kw (número o null), currency (texto). "
-        "Si hay un periodo (desde–hasta), usa el mes de facturación."
+        "Extrae datos de la factura de energía. Devuelve JSON con la clave 'rows' (lista). "
+        "Cada elemento debe tener: year_month (YYYY-MM), kwh (número), cost (número), "
+        "demand_kw (número o null), currency (texto breve, p.ej. ARS/USD). "
+        "Si ves varias facturas o meses en la imagen, devolvé varias filas. "
+        "No incluyas comentarios fuera del JSON."
     )
+
+    delays = [0.5, 1.0, 2.0]
+    last_raw = ""
+    for delay in [0.0] + delays:
+        if delay:
+            time.sleep(delay)
+        try:
+            out = client.chat.completions.create(
+                model=model,
+                temperature=0.0,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": "Sos un extractor de datos que siempre responde JSON válido."},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]}
+                ]
+            )
+            raw = out.choices[0].message.content or "{}"
+            last_raw = raw
+            data = json.loads(raw)
+            rows = data.get("rows", [])
+            recs = []
+            for r in rows:
+                ym = str(r.get("year_month") or "").strip()
+                dt = pd.to_datetime(ym + "-01", errors="coerce")
+                recs.append({
+                    "_year_month": dt if pd.notna(dt) else pd.NaT,
+                    "_kwh": float(r.get("kwh") or 0),
+                    "_cost": float(r.get("cost") or 0),
+                    "_demand_kw": float(r.get("demand_kw")) if r.get("demand_kw") not in (None, "") else None,
+                    "_currency": (str(r.get("currency") or "").strip() or None),
+                    "_source": filename
+                })
+            if recs:
+                return pd.DataFrame(recs)
+        except Exception:
+            continue
+
     try:
-        out = client.chat.completions.create(
-            model=model, temperature=0.0,
-            messages=[
-                {"role":"system","content":"Eres un extractor de datos robusto y preciso."},
-                {"role":"user","content":[{"type":"text","text":prompt},{"type":"image_url","image_url":{"url":image_url}}]}
-            ]
-        )
-        data = json.loads(out.choices[0].message.content or "{}")
-        rows = data.get("rows", [])
-        recs = []
-        for r in rows:
-            ym = str(r.get("year_month") or "").strip()
-            dt = pd.to_datetime(ym + "-01", errors="coerce")
-            recs.append({
-                "_year_month": dt if pd.notna(dt) else pd.NaT,
-                "_kwh": float(r.get("kwh") or 0),
-                "_cost": float(r.get("cost") or 0),
-                "_demand_kw": float(r.get("demand_kw")) if r.get("demand_kw") not in (None, "") else None,
-                "_currency": str(r.get("currency") or "").strip() or None,
-                "_source": filename
-            })
-        return pd.DataFrame(recs)
-    except Exception as e:
-        st.warning(f"No se pudo OCR {filename}: {e}")
-        return pd.DataFrame()
+        Path("/tmp/last_ocr_raw.json").write_text(last_raw, encoding="utf-8")
+    except Exception:
+        pass
+    st.warning(f"No se pudo OCR {filename}: respuesta no JSON. Se guardó /tmp/last_ocr_raw.json para depurar.")
+    return pd.DataFrame()
 
 # --------- PDF: TEXTO + RENDER A IMAGEN (pypdfium2) ---------
 
@@ -413,15 +456,13 @@ def _extract_text_from_pdf_simple(file_obj) -> str:
 
 def _pdf_to_images(file_bytes: bytes, dpi: int = 200):
     """
-    Convierte un PDF a una lista de imágenes PNG en memoria (bytes),
-    usando pypdfium2 (rueda pura, sin binarios externos).
+    Convierte PDF a lista de imágenes PNG (bytes) usando pypdfium2.
     """
     try:
         import pypdfium2 as pdfium
-        from PIL import Image
+        from PIL import Image  # noqa: F401 (asegura dependencia disponible)
     except Exception:
-        return []  # si no está, devolvemos vacío (no rompemos)
-
+        return []
     imgs = []
     try:
         pdf = pdfium.PdfDocument(BytesIO(file_bytes))
@@ -439,8 +480,12 @@ def _pdf_to_images(file_bytes: bytes, dpi: int = 200):
     return imgs
 
 def _parse_invoice_text_blocks_with_llm(raw_text: str, filename: str, model: str = "gpt-4o-mini") -> pd.DataFrame:
-    if not raw_text.strip():
+    """
+    Convierte texto crudo (PDF con texto) a filas mensuales. JSON estricto + retries.
+    """
+    if not (raw_text or "").strip():
         return pd.DataFrame()
+    import json as _json, time
     try:
         client = _openai_client()
     except Exception as e:
@@ -448,36 +493,53 @@ def _parse_invoice_text_blocks_with_llm(raw_text: str, filename: str, model: str
         return pd.DataFrame()
 
     instruction = (
-        "A partir del texto de una factura(s) de energía, construye JSON con una lista 'rows' "
-        "de registros mensuales con: year_month (YYYY-MM), kwh, cost, demand_kw (o null), currency. "
-        "Si hay varias facturas, produce múltiples filas."
+        "A partir del texto de una factura(s) de energía, devolvé JSON válido con una lista 'rows' "
+        "de registros mensuales: year_month (YYYY-MM), kwh (número), cost (número), "
+        "demand_kw (número o null), currency (texto). No incluyas comentarios fuera del JSON."
     )
+
+    delays = [0.5, 1.0, 2.0]
+    last_raw = ""
+    for delay in [0.0] + delays:
+        if delay:
+            time.sleep(delay)
+        try:
+            out = client.chat.completions.create(
+                model=model,
+                temperature=0.0,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": "Sos un extractor de datos de facturas que siempre responde JSON válido."},
+                    {"role": "user", "content": f"{instruction}\n\nTEXTO (truncado):\n{raw_text[:16000]}"}  # trunc seguridad
+                ]
+            )
+            raw = out.choices[0].message.content or "{}"
+            last_raw = raw
+            data = _json.loads(raw)
+            rows = data.get("rows", [])
+            recs = []
+            for r in rows:
+                ym = str(r.get("year_month") or "").strip()
+                dt = pd.to_datetime(ym + "-01", errors="coerce")
+                recs.append({
+                    "_year_month": dt if pd.notna(dt) else pd.NaT,
+                    "_kwh": float(r.get("kwh") or 0),
+                    "_cost": float(r.get("cost") or 0),
+                    "_demand_kw": float(r.get("demand_kw")) if r.get("demand_kw") not in (None, "") else None,
+                    "_currency": (str(r.get("currency") or "").strip() or None),
+                    "_source": filename
+                })
+            if recs:
+                return pd.DataFrame(recs)
+        except Exception:
+            continue
+
     try:
-        out = client.chat.completions.create(
-            model=model, temperature=0.0,
-            messages=[
-                {"role":"system","content":"Eres un extractor de datos de facturas preciso."},
-                {"role":"user","content":f"{instruction}\n\nTEXTO:\n{raw_text[:16000]}"}  # trunc
-            ]
-        )
-        data = json.loads(out.choices[0].message.content or "{}")
-        rows = data.get("rows", [])
-        recs = []
-        for r in rows:
-            ym = str(r.get("year_month") or "").strip()
-            dt = pd.to_datetime(ym + "-01", errors="coerce")
-            recs.append({
-                "_year_month": dt if pd.notna(dt) else pd.NaT,
-                "_kwh": float(r.get("kwh") or 0),
-                "_cost": float(r.get("cost") or 0),
-                "_demand_kw": float(r.get("demand_kw")) if r.get("demand_kw") not in (None, "") else None,
-                "_currency": str(r.get("currency") or "").strip() or None,
-                "_source": filename
-            })
-        return pd.DataFrame(recs)
-    except Exception as e:
-        st.warning(f"No se pudo interpretar PDF {filename} (texto): {e}")
-        return pd.DataFrame()
+        Path("/tmp/last_ocr_raw.json").write_text(last_raw, encoding="utf-8")
+    except Exception:
+        pass
+    st.warning(f"No se pudo interpretar texto de PDF {filename}: respuesta no JSON. Se guardó /tmp/last_ocr_raw.json.")
+    return pd.DataFrame()
 
 # ========================= RESUMEN / BASELINE / ENPI =========================
 
@@ -825,7 +887,7 @@ def page_energy_management():
     with st.expander("Opciones de lectura de facturas", expanded=True):
         use_ocr = st.toggle("Usar OCR con OpenAI (imágenes y PDFs escaneados)", value=True)
         ocr_model = st.selectbox("Modelo para OCR/parse", ["gpt-4o-mini","gpt-4o"], index=0)
-        st.caption("PDF con texto: se parsea con LLM. PDF escaneado: se rasteriza con pypdfium2 y se hace OCR por página.")
+        ocr_dpi = st.slider("DPI para rasterizar PDF", 120, 240, 180, 10, help="Menor DPI = archivos más livianos")
 
     st.markdown("**Política energética, objetivos y plan**")
     energy_policy = st.text_area("Política energética (borrador)", key="em_policy")
@@ -853,14 +915,14 @@ def page_energy_management():
                     inv_tables.append(_normalize_invoice_table(df, name))
                 elif suf == "pdf":
                     b = f.read()
-                    # Intento 1: extraer texto (si el PDF no es escaneado)
+                    # 1) Intentar extraer texto (si no es escaneado)
                     raw = _extract_text_from_pdf_simple(BytesIO(b))
                     parsed = pd.DataFrame()
                     if raw:
                         parsed = _parse_invoice_text_blocks_with_llm(raw, name, model=ocr_model) if use_ocr else pd.DataFrame()
+                    # 2) Si falló o no hay texto, rasterizar y OCR por página
                     if parsed.empty and use_ocr:
-                        # Intento 2: rasterizar páginas y OCR con OpenAI Vision
-                        pages = _pdf_to_images(b, dpi=200)
+                        pages = _pdf_to_images(b, dpi=int(ocr_dpi))
                         for j, pbytes in enumerate(pages):
                             dfo = _ocr_image_invoice_with_openai(pbytes, f"{name}#p{j+1}.png", model=ocr_model)
                             if not dfo.empty:
@@ -888,13 +950,10 @@ def page_energy_management():
         # Consolidación + merge con ledger histórico
         inv_df = pd.concat(inv_tables, ignore_index=True) if inv_tables else pd.DataFrame()
         if not inv_df.empty:
-            # tipado y orden
             if "_year_month" in inv_df.columns:
                 inv_df["_year_month"] = pd.to_datetime(inv_df["_year_month"])
             cols = ["_year_month","_kwh","_cost","_demand_kw","_currency","_source"]
             inv_df = inv_df[[c for c in cols if c in inv_df.columns]]
-
-            # Merge con ledger en memoria
             st.session_state["em_ledger"] = pd.concat([st.session_state.get("em_ledger", pd.DataFrame(columns=cols)), inv_df], ignore_index=True)
             st.session_state["em_ledger"] = st.session_state["em_ledger"].drop_duplicates()
 
@@ -954,8 +1013,7 @@ def page_energy_management():
             st.markdown("**Ledger normalizado (histórico consolidado):**")
             show_cols = [c for c in ["_year_month","_kwh","_cost","_demand_kw","_currency","_source"] if c in use_df.columns]
             if show_cols:
-                dfshow = use_df.copy()
-                dfshow = dfshow.sort_values("_year_month")
+                dfshow = use_df.copy().sort_values("_year_month")
                 st.dataframe(dfshow[show_cols].rename(columns={
                     "_year_month":"mes","_kwh":"kWh","_cost":"costo","_demand_kw":"demanda_kw","_currency":"moneda","_source":"archivo"
                 }), use_container_width=True)
@@ -981,7 +1039,7 @@ def page_energy_management():
                             x=alt.X("month:T", title="Mes"),
                             y=alt.Y("kwh:Q", title="kWh"),
                             tooltip=[alt.Tooltip("month:T", title="Mes", format="%Y-%m"),
-                                     alt.Tooltip("kwh:Q", title="kWh", format=",.0f")]
+                                     alt.Tooltip("kwh:Q", title="KWh", format=",.0f")]
                         ).properties(height=280),
                         use_container_width=True
                     )
