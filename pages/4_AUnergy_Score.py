@@ -1,6 +1,17 @@
 import streamlit as st
-from greenscore_core import page_energy_management, language_selector
+import greenscore_core as gc  # núcleo común
 
-language_selector()
+st.set_page_config(
+    page_title="AUnergy Score",
+    page_icon="⚡",
+    layout="wide",
+)
 
-page_energy_management()
+# Selector de idioma siempre visible en la barra lateral
+gc.language_selector()
+lang = gc.get_lang()
+
+st.title("AUnergy Score ⚡")
+
+# Contenido principal desde el core
+gc.page_energy_management()
