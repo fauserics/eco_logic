@@ -16,6 +16,7 @@ LANG_OPTIONS = {
 
 TRANSLATIONS = {
     "en": {
+        # ------------------- Inicio -------------------
         "home_page_title": "Home – GreenScore",
         "home_title": "GreenScore",
         "home_intro": (
@@ -29,6 +30,138 @@ TRANSLATIONS = {
             "© GreenScore – AInergy Score · Demo with ISO 50001 module, "
             "LLM report and PDF export."
         ),
+
+        # ------------------- Proyecto individual -------------------
+        "pi_settings_title": "⚙️ General scheme settings",
+        "pi_scheme": "Scheme",
+        "pi_form_intro": "Enter values and then click **Calculate score**.",
+        "pi_btn_calc": "Calculate score",
+        "pi_score_metric": "Total score (0–100)",
+        "pi_class_demo": "Demo rating",
+        "pi_chart_x": "Contribution to score",
+        "pi_chart_y": "Category",
+
+        # ------------------- Portfolio -------------------
+        "pf_scheme_label": "Scheme for portfolio calculation",
+        "pf_upload_help": "Upload a CSV with `project_name`, `typology` (optional) and the scheme metrics.",
+        "pf_download_tpl": "⬇️ Download template (CSV)",
+        "pf_upload_csv": "Upload CSV",
+        "pf_err_project_name": "The CSV must include the `project_name` column.",
+        "pf_warn_missing": "Missing metrics: {missing}. They are treated as 0.",
+        "pf_filters": "Filters",
+        "pf_typologies": "Typologies",
+        "pf_search": "Search project",
+        "pf_min_score": "Minimum score",
+        "pf_metric_projects": "Projects",
+        "pf_metric_avg": "Average",
+        "pf_metric_max": "Maximum",
+        "pf_metric_typologies": "Typologies",
+        "pf_chart_score_title": "Score",
+        "pf_chart_score_y": "Project",
+        "pf_chart_typology_avg": "Average by typology",
+        "pf_chart_typology": "Typology",
+        "pf_download_results": "⬇️ Download results (CSV)",
+
+        # ------------------- Metodología -------------------
+        "me_scheme_label": "Scheme to display",
+        "me_intro": (
+            "1) **Normalization**: `value / target` truncated to [0, 1].  \n"
+            "2) **Category score** = average of normalized metrics.  \n"
+            "3) **Total score** = weighted sum of categories × 100.  \n"
+            "4) Demo rating: Starter / Bronze / Silver / Gold / Platinum."
+        ),
+
+        # ------------------- Energy Management / AInergy -------------------
+        "em_saved_sites_expander": "🏢 Sites saved in this session",
+        "em_saved_sites_title": "Saved sites:",
+        "em_saved_sites_empty": "No sites have been saved in this session yet.",
+
+        "em_visual_record_title": "Building visual record",
+        "em_building_photos": "Building photos (JPG/PNG)",
+        "em_building_videos": "Building videos (MP4/MOV/MKV)",
+        "em_cam_fachada": "Façade / exterior",
+        "em_cam_equipos": "Main equipment",
+        "em_cam_etiquetas": "Labels / panels",
+        "em_cam_section": "Take photos from the app (FastField style)",
+
+        "em_site_data_title": "Site data and occupancy",
+        "em_org": "Organization",
+        "em_site": "Site/Building",
+        "em_users": "Fixed users",
+        "em_address": "Address",
+        "em_climate_zone": "Climate zone",
+        "em_building_type": "Building type",
+        "em_visitors": "Average visitors per day",
+        "em_bstart": "Baseline from",
+        "em_bend": "Baseline to",
+
+        "em_uses_title": "Use profiles and internal typologies",
+        "em_uses_default_typology": "Offices",
+        "em_uses_default_hours": "hours_per_week",
+        "em_peak_occupancy": "Peak occupancy (people)",
+        "em_occ_pattern": "Occupancy pattern",
+
+        "em_seus_title": "Significant energy uses (SEUs) and equipment",
+        "em_seus_main": "Main SEUs (select one or more)",
+        "em_seus_other": "Other SEUs (one per line)",
+        "em_enpi_title": "Candidate EnPIs (for the report)",
+        "em_enpi_label": "Candidate EnPIs (one per line)",
+        "em_equipment_title": "Equipment and appliances present",
+        "em_equipment_label": "Select the main equipment/systems",
+
+        "em_invoices_title": "Energy bills and measurements",
+        "em_invoices_uploader": "Bills/measurements (CSV/XLSX or PDF)",
+        "em_invoice_images_uploader": "Invoice / meter photos (PNG/JPG)",
+
+        "em_ledger_expander": "📒 Historical invoices ledger (CSV)",
+        "em_ledger_caption": "Import a previous ledger or download the current normalized one.",
+        "em_ledger_upload": "Upload ledger CSV (columns: _year_month,_kwh,_cost,_demand_kw,_currency,_source)",
+        "em_ledger_imported": "Ledger imported and merged.",
+        "em_ledger_upload_err": "Could not import ledger:",
+        "em_ledger_download": "⬇️ Download current ledger (CSV)",
+
+        "em_ocr_options": "Invoice reading options",
+        "em_ocr_toggle": "Use OCR with OpenAI (images and scanned PDFs)",
+        "em_ocr_model": "Model for OCR/parse",
+        "em_ocr_dpi": "DPI to rasterize PDF",
+
+        "em_evidence_title": "Additional evidence",
+        "em_evidence_types_label": "What type of evidence do you want to upload?",
+        "em_evidence_building_extra": "Building photos (additional)",
+        "em_evidence_equipment": "Equipment photos",
+        "em_evidence_labels": "Labels / panel photos",
+        "em_evidence_vegetation": "Vegetation / surroundings photos",
+
+        "em_policy_title": "Energy policy, objectives and plan",
+        "em_policy_label": "Energy policy (draft)",
+        "em_objectives_label": "Objectives/targets (one per line)",
+        "em_action_plan_label": "Action plan (one per line)",
+
+        "em_btn_save_dataset": "Save site dataset (session memory)",
+        "em_dataset_saved": "Dataset saved in session memory.",
+        "em_ledger_view_title": "Normalized ledger (historical consolidated):",
+        "em_baseline_title": "Baseline and EnPIs:",
+        "em_kpi_kwh_year": "kWh/year (equiv.)",
+        "em_kpi_unit_cost": "$/kWh",
+        "em_kpi_kwh_m2": "kWh/m²·year",
+        "em_kpi_kwh_user": "kWh/user·year",
+        "em_trends_title": "Monthly trends",
+        "em_trends_x": "Month",
+        "em_trends_kwh": "kWh",
+        "em_trends_cost": "Cost",
+
+        "em_report_section_title": "Generate report with OpenAI",
+        "em_report_model": "OpenAI model",
+        "em_report_detail": "Detail level",
+        "em_report_temp": "Creativity (temp.)",
+        "em_brand_color": "Corporate color",
+        "em_logo_url": "Logo (optional public URL)",
+        "em_btn_generate_report": "Generate ISO 50001 report",
+        "em_no_dataset": "No dataset saved to generate the report.",
+        "em_generating_report_info": "Generating report with **{model}** · detail **{detail}/5** · temp **{temp:.1f}**…",
+        "em_pdf_download": "⬇️ Download PDF (A4)",
+        "em_pdf_fallback": "You can export the PDF directly from your browser.",
+        "em_pdf_print_label": "🖨️ Print / Save as PDF (A4)",
     }
 }
 
@@ -764,9 +897,8 @@ def page_proyecto_individual():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
 
-    
-    with st.expander("⚙️ Ajustes generales del esquema", expanded=True):
-        scheme = st.selectbox("Esquema", options=SCHEMES, index=0, key="pi_scheme")
+    with st.expander(_t("pi_settings_title", "⚙️ Ajustes generales del esquema"), expanded=True):
+        scheme = st.selectbox(_t("pi_scheme", "Esquema"), options=SCHEMES, index=0, key="pi_scheme")
         scheme_cfg = cfg["schemes"][scheme]
         st.dataframe(
             pd.DataFrame([scheme_cfg["weights"]]).T.rename(columns={0:"Peso"})
@@ -777,7 +909,7 @@ def page_proyecto_individual():
     metrics = cfg["schemes"][st.session_state.get("pi_scheme", SCHEMES[0])]["metrics"]
 
     with st.form("single_project_form", clear_on_submit=False):
-        st.write("Ingresá valores y luego presioná **Calcular score**.")
+        st.write(_t("pi_form_intro", "Ingresá valores y luego presioná **Calcular score**."))
         cols = st.columns(2)
         inputs = {}
         for i, (key, meta) in enumerate(metrics.items()):
@@ -794,17 +926,17 @@ def page_proyecto_individual():
                     mx = float(meta.get("max", 100.0))
                     step = 0.1 if (mx - mn) <= 5 else 1.0
                     inputs[key] = st.number_input(label, min_value=mn, max_value=mx, value=mn, step=step)
-        submitted = st.form_submit_button("Calcular score", use_container_width=True)
+        submitted = st.form_submit_button(_t("pi_btn_calc", "Calcular score"), use_container_width=True)
 
     if submitted:
         scheme_cfg = cfg["schemes"][st.session_state.get("pi_scheme", SCHEMES[0])]
         total, contrib_df, metric_df = compute_scores(inputs, scheme_cfg)
-        st.metric("Score total (0–100)", f"{total:.1f}")
-        st.success(f"Clasificación demo: **{label_tier(total)}**")
+        st.metric(_t("pi_score_metric", "Score total (0–100)"), f"{total:.1f}")
+        st.success(f"{_t('pi_class_demo', 'Clasificación demo')}: **{label_tier(total)}**")
         st.altair_chart(
             alt.Chart(contrib_df).mark_bar().encode(
-                x=alt.X("Contribution:Q", title="Aporte al score"),
-                y=alt.Y("Category:N", sort="-x", title="Categoría"),
+                x=alt.X("Contribution:Q", title=_t("pi_chart_x", "Aporte al score")),
+                y=alt.Y("Category:N", sort="-x", title=_t("pi_chart_y", "Categoría")),
                 tooltip=["Category", alt.Tooltip("Contribution:Q", format=".1f")]
             ),
             use_container_width=True
@@ -817,22 +949,35 @@ def page_portfolio():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
     
-
-    scheme = st.selectbox("Esquema del cálculo para el portfolio", options=SCHEMES, index=0, key="pf_scheme")
+    scheme = st.selectbox(
+        _t("pf_scheme_label", "Esquema del cálculo para el portfolio"),
+        options=SCHEMES,
+        index=0,
+        key="pf_scheme"
+    )
     scheme_cfg = cfg["schemes"][scheme]
 
-    st.write("Subí un CSV con `project_name`, `typology` (opcional) y las métricas del esquema.")
+    st.write(_t(
+        "pf_upload_help",
+        "Subí un CSV con `project_name`, `typology` (opcional) y las métricas del esquema."
+    ))
     sample_path = Path("data/sample_portfolio_with_typologies.csv")
     if sample_path.exists():
-        st.download_button("⬇️ Descargar plantilla (CSV)", data=sample_path.read_bytes(),
-                           file_name="sample_portfolio_with_typologies.csv")
+        st.download_button(
+            _t("pf_download_tpl", "⬇️ Descargar plantilla (CSV)"),
+            data=sample_path.read_bytes(),
+            file_name="sample_portfolio_with_typologies.csv"
+        )
     else:
         buf = BytesIO()
         DEFAULT_SAMPLE.to_csv(buf, index=False)
-        st.download_button("⬇️ Descargar plantilla (CSV)", data=buf.getvalue(),
-                           file_name="sample_portfolio_with_typologies.csv")
+        st.download_button(
+            _t("pf_download_tpl", "⬇️ Descargar plantilla (CSV)"),
+            data=buf.getvalue(),
+            file_name="sample_portfolio_with_typologies.csv"
+        )
 
-    file = st.file_uploader("Subir CSV", type=["csv"])
+    file = st.file_uploader(_t("pf_upload_csv", "Subir CSV"), type=["csv"])
     if file:
         try:
             df = pd.read_csv(file)
@@ -842,7 +987,7 @@ def page_portfolio():
         df = DEFAULT_SAMPLE.copy()
 
     if "project_name" not in df.columns:
-        st.error("El CSV debe incluir la columna `project_name`.")
+        st.error(_t("pf_err_project_name", "El CSV debe incluir la columna `project_name`."))
         return
 
     if "typology" not in df.columns:
@@ -850,7 +995,11 @@ def page_portfolio():
     metrics = list(scheme_cfg["metrics"].keys())
     missing = [m for m in metrics if m not in df.columns]
     if missing:
-        st.warning(f"Faltan métricas: {', '.join(missing)}. Se consideran 0.")
+        msg = ", ".join(missing)
+        st.warning(_t(
+            "pf_warn_missing",
+            f"Faltan métricas: {msg}. Se consideran 0."
+        ).format(missing=msg))
         for m in missing:
             df[m] = 0
 
@@ -860,11 +1009,11 @@ def page_portfolio():
 
     df["score"] = df.apply(score_row, axis=1)
 
-    with st.expander("Filtros", expanded=True):
+    with st.expander(_t("pf_filters", "Filtros"), expanded=True):
         tps = sorted(df["typology"].astype(str).unique().tolist())
-        filt_tp = st.multiselect("Tipologías", options=tps, default=tps, key="pf_tps")
-        q = st.text_input("Buscar proyecto", "", key="pf_q")
-        min_score = st.slider("Score mínimo", 0, 100, 0, 1, key="pf_minsc")
+        filt_tp = st.multiselect(_t("pf_typologies", "Tipologías"), options=tps, default=tps, key="pf_tps")
+        q = st.text_input(_t("pf_search", "Buscar proyecto"), "", key="pf_q")
+        min_score = st.slider(_t("pf_min_score", "Score mínimo"), 0, 100, 0, 1, key="pf_minsc")
 
     view = df.copy()
     if filt_tp: view = view[view["typology"].astype(str).isin(filt_tp)]
@@ -872,10 +1021,10 @@ def page_portfolio():
     view = view[view["score"] >= min_score]
 
     c1, c2, c3, c4 = st.columns(4)
-    with c1: st.metric("Proyectos", f"{len(view):,}")
-    with c2: st.metric("Promedio", f"{view['score'].mean():.1f}" if len(view) else "–")
-    with c3: st.metric("Máximo", f"{view['score'].max():.1f}" if len(view) else "–")
-    with c4: st.metric("Tipologías", f"{view['typology'].nunique():,}")
+    with c1: st.metric(_t("pf_metric_projects", "Proyectos"), f"{len(view):,}")
+    with c2: st.metric(_t("pf_metric_avg", "Promedio"), f"{view['score'].mean():.1f}" if len(view) else "–")
+    with c3: st.metric(_t("pf_metric_max", "Máximo"), f"{view['score'].max():.1f}" if len(view) else "–")
+    with c4: st.metric(_t("pf_metric_typologies", "Tipologías"), f"{view['typology'].nunique():,}")
 
     st.dataframe(view[["project_name","typology","score"] + metrics].sort_values("score", ascending=False),
                  hide_index=True, use_container_width=True)
@@ -883,40 +1032,52 @@ def page_portfolio():
     if len(view):
         st.altair_chart(
             alt.Chart(view).mark_bar().encode(
-                x=alt.X("score:Q", title="Score"),
-                y=alt.Y("project_name:N", sort="-x", title="Proyecto"),
-                color=alt.Color("typology:N", title="Tipología"),
-                tooltip=[alt.Tooltip("project_name:N"), alt.Tooltip("typology:N"),
-                         alt.Tooltip("score:Q", format=".1f")]
+                x=alt.X("score:Q", title=_t("pf_chart_score_title", "Score")),
+                y=alt.Y("project_name:N", sort="-x", title=_t("pf_chart_score_y", "Proyecto")),
+                color=alt.Color("typology:N", title=_t("pf_chart_typology", "Tipología")),
+                tooltip=[
+                    alt.Tooltip("project_name:N"),
+                    alt.Tooltip("typology:N", title=_t("pf_chart_typology", "Tipología")),
+                    alt.Tooltip("score:Q", format=".1f")
+                ]
             ).properties(height=420),
             use_container_width=True
         )
         by_tp = view.groupby("typology", as_index=False)["score"].mean().sort_values("score", ascending=False)
         st.altair_chart(
             alt.Chart(by_tp).mark_bar().encode(
-                x=alt.X("score:Q", title="Promedio por tipología"),
-                y=alt.Y("typology:N", sort="-x", title="Tipología"),
-                tooltip=[alt.Tooltip("typology:N"), alt.Tooltip("score:Q", format=".1f")]
+                x=alt.X("score:Q", title=_t("pf_chart_typology_avg", "Promedio por tipología")),
+                y=alt.Y("typology:N", sort="-x", title=_t("pf_chart_typology", "Tipología")),
+                tooltip=[
+                    alt.Tooltip("typology:N", title=_t("pf_chart_typology", "Tipología")),
+                    alt.Tooltip("score:Q", format=".1f")
+                ]
             ).properties(height=320),
             use_container_width=True
         )
 
-    st.download_button("⬇️ Descargar resultados (CSV)", data=view.to_csv(index=False), file_name="portfolio_scores.csv")
+    st.download_button(
+        _t("pf_download_results", "⬇️ Descargar resultados (CSV)"),
+        data=view.to_csv(index=False),
+        file_name="portfolio_scores.csv"
+    )
 
 def page_metodologia():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
 
-    
-    scheme = st.selectbox("Esquema a visualizar", options=SCHEMES, index=0, key="me_scheme")
+    scheme = st.selectbox(_t("me_scheme_label", "Esquema a visualizar"), options=SCHEMES, index=0, key="me_scheme")
     scheme_cfg = cfg["schemes"][scheme]
 
-    st.markdown("""
+    st.markdown(_t(
+        "me_intro",
+        """
 1) **Normalización**: `valor / target` truncado a [0, 1].  
 2) **Score de categoría** = promedio de métricas normalizadas.  
 3) **Score total** = suma ponderada de categorías × 100.  
 4) Clasificación demo: Starter / Bronze / Silver / Gold / Platinum.
-    """)
+        """
+    ))
     st.dataframe(
         pd.DataFrame([scheme_cfg["weights"]]).T.rename(columns={0:"Peso"})
         .reset_index().rename(columns={"index":"Categoría"}),
@@ -935,69 +1096,73 @@ def page_energy_management():
     # Idioma (simple: es/en)
     lang = st.session_state.get("lang", "es")
 
-    
-
     # ------------------------------------------------------------------
     # 0) Sitios guardados en sesión (múltiples edificios)
     # ------------------------------------------------------------------
     if "em_sites" not in st.session_state:
         st.session_state["em_sites"] = {}
 
-    with st.expander("🏢 Sitios guardados en esta sesión", expanded=False):
+    with st.expander(_t("em_saved_sites_expander", "🏢 Sitios guardados en esta sesión"), expanded=False):
         if st.session_state["em_sites"]:
-            st.write("Sitios guardados:")
+            st.write(_t("em_saved_sites_title", "Sitios guardados:"))
             for name in st.session_state["em_sites"].keys():
                 st.markdown(f"- **{name}**")
         else:
-            st.caption("Todavía no hay sitios guardados en esta sesión.")
+            st.caption(_t("em_saved_sites_empty", "Todavía no hay sitios guardados en esta sesión."))
 
     # ------------------------------------------------------------------
     # 1) Registro visual inicial (FOTOS / VIDEOS + CÁMARA)
     # ------------------------------------------------------------------
-    st.markdown("### Registro visual del edificio")
+    st.markdown("### " + _t("em_visual_record_title", "Registro visual del edificio"))
 
     col_media1, col_media2 = st.columns(2)
     with col_media1:
         building_photos = st.file_uploader(
-            "Fotos del edificio (JPG/PNG)",
+            _t("em_building_photos", "Fotos del edificio (JPG/PNG)"),
             type=["png", "jpg", "jpeg"],
             accept_multiple_files=True,
             key="em_building_photos",
         )
     with col_media2:
         building_videos = st.file_uploader(
-            "Videos del edificio (MP4/MOV/MKV)",
+            _t("em_building_videos", "Videos del edificio (MP4/MOV/MKV)"),
             type=["mp4", "mov", "mkv"],
             accept_multiple_files=True,
             key="em_building_videos",
         )
 
-    st.markdown("**Tomar fotos desde la app (estilo FastField)**")
+    st.markdown("**" + _t("em_cam_section", "Tomar fotos desde la app (estilo FastField)") + "**")
     cam_cols = st.columns(3)
     with cam_cols[0]:
-        cam_building = st.camera_input("Fachada / exterior", key="em_cam_fachada")
+        cam_building = st.camera_input(_t("em_cam_fachada", "Fachada / exterior"), key="em_cam_fachada")
     with cam_cols[1]:
-        cam_equip = st.camera_input("Equipos principales", key="em_cam_equipos")
+        cam_equip = st.camera_input(_t("em_cam_equipos", "Equipos principales"), key="em_cam_equipos")
     with cam_cols[2]:
-        cam_labels = st.camera_input("Etiquetas / tableros", key="em_cam_etiquetas")
+        cam_labels = st.camera_input(_t("em_cam_etiquetas", "Etiquetas / tableros"), key="em_cam_etiquetas")
 
     # ------------------------------------------------------------------
     # 2) Formulario de sitio y contexto
     # ------------------------------------------------------------------
-    st.markdown("### Datos del sitio y ocupación")
+    st.markdown("### " + _t("em_site_data_title", "Datos del sitio y ocupación"))
 
     col1, col2, col3 = st.columns([2, 2, 1])
-    org = col1.text_input("Organización", placeholder="Fauser ICS", key="em_org")
-    site = col2.text_input("Sitio/Edificio", placeholder="HQ – Quilmes", key="em_site")
-    users_count = col3.number_input("Nº usuarios fijos", min_value=0, value=0, step=1, key="em_users")
+    org = col1.text_input(_t("em_org", "Organización"), placeholder="Fauser ICS", key="em_org")
+    site = col2.text_input(_t("em_site", "Sitio/Edificio"), placeholder="HQ – Quilmes", key="em_site")
+    users_count = col3.number_input(
+        _t("em_users", "Nº usuarios fijos"),
+        min_value=0,
+        value=0,
+        step=1,
+        key="em_users"
+    )
 
     col4, col5 = st.columns(2)
-    address = col4.text_input("Dirección", placeholder="Calle, Ciudad, País", key="em_addr")
-    climate_zone = col5.text_input("Zona climática", placeholder="ASHRAE/IRAM…", key="em_zone")
+    address = col4.text_input(_t("em_address", "Dirección"), placeholder="Calle, Ciudad, País", key="em_addr")
+    climate_zone = col5.text_input(_t("em_climate_zone", "Zona climática"), placeholder="ASHRAE/IRAM…", key="em_zone")
 
     col6, col7 = st.columns(2)
     building_type = col6.selectbox(
-        "Tipo de edificio",
+        _t("em_building_type", "Tipo de edificio"),
         [
             "Oficinas",
             "Residencial",
@@ -1010,14 +1175,20 @@ def page_energy_management():
         key="em_building_type",
     )
     visitors_per_day = int(
-        col7.number_input("Visitantes promedio por día", min_value=0, value=0, step=1, key="em_visitors")
+        col7.number_input(
+            _t("em_visitors", "Visitantes promedio por día"),
+            min_value=0,
+            value=0,
+            step=1,
+            key="em_visitors"
+        )
     )
 
     col8, col9 = st.columns(2)
-    baseline_start = col8.date_input("Baseline desde", value=None, key="em_bstart")
-    baseline_end = col9.date_input("Baseline hasta", value=None, key="em_bend")
+    baseline_start = col8.date_input(_t("em_bstart", "Baseline desde"), value=None, key="em_bstart")
+    baseline_end = col9.date_input(_t("em_bend", "Baseline hasta"), value=None, key="em_bend")
 
-    st.markdown("**Perfiles de uso y tipologías internas**")
+    st.markdown("### " + _t("em_uses_title", "Perfiles de uso y tipologías internas"))
     uses_df = st.data_editor(
         pd.DataFrame(
             [{"tipología": "Oficinas", "area_m2": 1000, "horas_operación_semana": 50}]
@@ -1029,16 +1200,24 @@ def page_energy_management():
 
     occ_col1, occ_col2 = st.columns(2)
     peak_occupancy = int(
-        occ_col1.number_input("Ocupación pico (personas)", 0, 1_000_000, 0, key="em_peak")
+        occ_col1.number_input(
+            _t("em_peak_occupancy", "Ocupación pico (personas)"),
+            0,
+            1_000_000,
+            0,
+            key="em_peak"
+        )
     )
     occupancy_pattern = occ_col2.text_input(
-        "Patrón de ocupación", "L–V 9–18, sáb reducido", key="em_occpat"
+        _t("em_occ_pattern", "Patrón de ocupación"),
+        "L–V 9–18, sáb reducido",
+        key="em_occpat"
     )
 
     # ------------------------------------------------------------------
     # 3) SEUs, EnPIs y equipos
     # ------------------------------------------------------------------
-    st.markdown("### Usos significativos de energía (SEUs) y equipos")
+    st.markdown("### " + _t("em_seus_title", "Usos significativos de energía (SEUs) y equipos"))
 
     predefined_seus = [
         "HVAC",
@@ -1050,25 +1229,25 @@ def page_energy_management():
         "Ascensores / Escaleras mecánicas",
     ]
     seus_selected = st.multiselect(
-        "SEUs principales (seleccioná uno o varios)",
+        _t("em_seus_main", "SEUs principales (seleccioná uno o varios)"),
         options=predefined_seus,
         default=["HVAC", "Iluminación", "Procesos"],
         key="em_seus_sel",
     )
     seus_extra = st.text_area(
-        "Otros SEUs (uno por línea)",
+        _t("em_seus_other", "Otros SEUs (uno por línea)"),
         key="em_seus_extra",
         placeholder="Chillers dedicados\nLíneas de producción específicas",
     )
 
-    st.markdown("**EnPIs candidatos (para el informe)**")
+    st.markdown("**" + _t("em_enpi_title", "EnPIs candidatos (para el informe)") + "**")
     enpis = st.text_area(
-        "EnPIs candidatos (uno por línea)",
+        _t("em_enpi_label", "EnPIs candidatos (uno por línea)"),
         "kWh/m2\nkWh/usuario\nEUI\nFactor de carga",
         key="em_enpis",
     )
 
-    st.markdown("**Equipos y electrodomésticos presentes**")
+    st.markdown("**" + _t("em_equipment_title", "Equipos y electrodomésticos presentes") + "**")
     equipment_options = [
         "Aire acondicionado central",
         "Splits individuales",
@@ -1083,7 +1262,7 @@ def page_energy_management():
         "Iluminación fluorescente / descarga",
     ]
     equipment_selected = st.multiselect(
-        "Seleccioná los principales equipos / sistemas",
+        _t("em_equipment_label", "Seleccioná los principales equipos / sistemas"),
         options=equipment_options,
         key="em_equipment",
     )
@@ -1091,30 +1270,33 @@ def page_energy_management():
     # ------------------------------------------------------------------
     # 4) Facturas / mediciones (después del formulario)
     # ------------------------------------------------------------------
-    st.markdown("### Facturas y mediciones de energía")
+    st.markdown("### " + _t("em_invoices_title", "Facturas y mediciones de energía"))
 
     invoices = st.file_uploader(
-        "Facturas/mediciones (CSV/XLSX o PDF)",
+        _t("em_invoices_uploader", "Facturas/mediciones (CSV/XLSX o PDF)"),
         type=["csv", "xlsx", "xls", "pdf"],
         accept_multiple_files=True,
         key="em_invoices",
     )
 
     invoice_images = st.file_uploader(
-        "Fotos de facturas / medidores (PNG/JPG)",
+        _t("em_invoice_images_uploader", "Fotos de facturas / medidores (PNG/JPG)"),
         type=["png", "jpg", "jpeg"],
         accept_multiple_files=True,
         key="em_invoice_images",
     )
 
-    with st.expander("📒 Registro histórico de facturas (CSV)", expanded=False):
-        st.caption("Importá un ledger previo o descargá el actual normalizado.")
+    with st.expander(_t("em_ledger_expander", "📒 Registro histórico de facturas (CSV)"), expanded=False):
+        st.caption(_t("em_ledger_caption", "Importá un ledger previo o descargá el actual normalizado."))
         if "em_ledger" not in st.session_state:
             st.session_state["em_ledger"] = pd.DataFrame(
                 columns=["_year_month", "_kwh", "_cost", "_demand_kw", "_currency", "_source"]
             )
         up = st.file_uploader(
-            "Cargar ledger CSV (columnas: _year_month,_kwh,_cost,_demand_kw,_currency,_source)",
+            _t(
+                "em_ledger_upload",
+                "Cargar ledger CSV (columnas: _year_month,_kwh,_cost,_demand_kw,_currency,_source)"
+            ),
             type=["csv"],
             key="em_ledger_up",
         )
@@ -1130,20 +1312,27 @@ def page_energy_management():
                     pd.concat([st.session_state["em_ledger"], new], ignore_index=True)
                     .drop_duplicates()
                 )
-                st.success("Ledger importado y fusionado.")
+                st.success(_t("em_ledger_imported", "Ledger importado y fusionado."))
             except Exception as e:
-                st.error(f"No se pudo importar el ledger: {e}")
+                st.error(f"{_t('em_ledger_upload_err', 'No se pudo importar el ledger:')} {e}")
         st.download_button(
-            "⬇️ Descargar ledger actual (CSV)",
+            _t("em_ledger_download", "⬇️ Descargar ledger actual (CSV)"),
             data=st.session_state["em_ledger"].to_csv(index=False),
             file_name="energy_invoices_ledger.csv",
         )
 
-    with st.expander("Opciones de lectura de facturas", expanded=True):
-        use_ocr = st.toggle("Usar OCR con OpenAI (imágenes y PDFs escaneados)", value=True)
-        ocr_model = st.selectbox("Modelo para OCR/parse", ["gpt-4o-mini", "gpt-4o"], index=0)
+    with st.expander(_t("em_ocr_options", "Opciones de lectura de facturas"), expanded=True):
+        use_ocr = st.toggle(
+            _t("em_ocr_toggle", "Usar OCR con OpenAI (imágenes y PDFs escaneados)"),
+            value=True
+        )
+        ocr_model = st.selectbox(
+            _t("em_ocr_model", "Modelo para OCR/parse"),
+            ["gpt-4o-mini", "gpt-4o"],
+            index=0
+        )
         ocr_dpi = st.slider(
-            "DPI para rasterizar PDF",
+            _t("em_ocr_dpi", "DPI para rasterizar PDF"),
             120,
             240,
             180,
@@ -1154,10 +1343,10 @@ def page_energy_management():
     # ------------------------------------------------------------------
     # 5) Evidencias específicas (edificio, equipos, etiquetas, vegetación)
     # ------------------------------------------------------------------
-    st.markdown("### Evidencias adicionales")
+    st.markdown("### " + _t("em_evidence_title", "Evidencias adicionales"))
 
     ev_types = st.multiselect(
-        "¿Qué tipo de evidencia querés cargar?",
+        _t("em_evidence_types_label", "¿Qué tipo de evidencia querés cargar?"),
         ["Fotos del edificio", "Fotos de equipos", "Etiquetas / tableros", "Vegetación / entorno"],
         default=["Fotos del edificio"],
         key="em_ev_types",
@@ -1166,28 +1355,28 @@ def page_energy_management():
     ev_building = ev_equipment = ev_labels = ev_vegetation = []
     if "Fotos del edificio" in ev_types:
         ev_building = st.file_uploader(
-            "Fotos del edificio (adicionales)",
+            _t("em_evidence_building_extra", "Fotos del edificio (adicionales)"),
             type=["png", "jpg", "jpeg"],
             accept_multiple_files=True,
             key="em_ev_building",
         )
     if "Fotos de equipos" in ev_types:
         ev_equipment = st.file_uploader(
-            "Fotos de equipos",
+            _t("em_evidence_equipment", "Fotos de equipos"),
             type=["png", "jpg", "jpeg"],
             accept_multiple_files=True,
             key="em_ev_equipment",
         )
     if "Etiquetas / tableros" in ev_types:
         ev_labels = st.file_uploader(
-            "Fotos de etiquetas / tableros",
+            _t("em_evidence_labels", "Fotos de etiquetas / tableros"),
             type=["png", "jpg", "jpeg"],
             accept_multiple_files=True,
             key="em_ev_labels",
         )
     if "Vegetación / entorno" in ev_types:
         ev_vegetation = st.file_uploader(
-            "Fotos de vegetación / entorno",
+            _t("em_evidence_vegetation", "Fotos de vegetación / entorno"),
             type=["png", "jpg", "jpeg"],
             accept_multiple_files=True,
             key="em_ev_vegetation",
@@ -1196,16 +1385,16 @@ def page_energy_management():
     # ------------------------------------------------------------------
     # 6) Política, objetivos y plan
     # ------------------------------------------------------------------
-    st.markdown("### Política energética, objetivos y plan")
+    st.markdown("### " + _t("em_policy_title", "Política energética, objetivos y plan"))
 
-    energy_policy = st.text_area("Política energética (borrador)", key="em_policy")
+    energy_policy = st.text_area(_t("em_policy_label", "Política energética (borrador)"), key="em_policy")
     objectives = st.text_area(
-        "Objetivos/Metas (uno por línea)",
+        _t("em_objectives_label", "Objetivos/Metas (uno por línea)"),
         "Reducir EUI 10% en 12 meses\nPF ≥ 0.97",
         key="em_objs",
     )
     action_plan = st.text_area(
-        "Plan de acción (uno por línea)",
+        _t("em_action_plan_label", "Plan de acción (uno por línea)"),
         "LED\nOptimización consignas HVAC\nMantenimiento VFD",
         key="em_plan",
     )
@@ -1216,7 +1405,7 @@ def page_energy_management():
     # ------------------------------------------------------------------
     # 7) Guardar dataset del sitio (incluye TODO lo anterior)
     # ------------------------------------------------------------------
-    if st.button("Guardar dataset del sitio (memoria de sesión)", key="em_save"):
+    if st.button(_t("em_btn_save_dataset", "Guardar dataset del sitio (memoria de sesión)"), key="em_save"):
         inv_tables = []
         evidence_files = []
 
@@ -1369,11 +1558,11 @@ def page_energy_management():
         if site:
             st.session_state["em_sites"][site] = dataset
 
-        st.success("Dataset guardado en memoria de sesión.")
+        st.success(_t("em_dataset_saved", "Dataset guardado en memoria de sesión."))
 
         # ---- Vista + KPIs + gráficos (si hay datos) ----
         if not use_df.empty:
-            st.markdown("**Ledger normalizado (histórico consolidado):**")
+            st.markdown("**" + _t("em_ledger_view_title", "Ledger normalizado (histórico consolidado):") + "**")
             show_cols = [
                 c
                 for c in ["_year_month", "_kwh", "_cost", "_demand_kw", "_currency", "_source"]
@@ -1395,27 +1584,27 @@ def page_energy_management():
                     use_container_width=True,
                 )
 
-            st.markdown("**Baseline y EnPIs:**")
+            st.markdown("**" + _t("em_baseline_title", "Baseline y EnPIs:") + "**")
             c1, c2, c3, c4 = st.columns(4)
             b = derived.get("baseline", {})
             e = derived.get("enpi", {})
             with c1:
-                st.metric("kWh/año (equiv.)", f"{(b.get('kwh_year_equiv') or 0):,.0f}")
+                st.metric(_t("em_kpi_kwh_year", "kWh/año (equiv.)"), f"{(b.get('kwh_year_equiv') or 0):,.0f}")
             with c2:
                 st.metric(
-                    "$/kWh",
+                    _t("em_kpi_unit_cost", "$/kWh"),
                     f"{(e.get('cost_per_kwh') or 0):,.4f}" if e.get("cost_per_kwh") else "–",
                 )
             with c3:
                 st.metric(
-                    "kWh/m²·año",
+                    _t("em_kpi_kwh_m2", "kWh/m²·año"),
                     f"{(e.get('kwh_per_m2_yr') or 0):,.1f}"
                     if e.get("kwh_per_m2_yr")
                     else "–",
                 )
             with c4:
                 st.metric(
-                    "kWh/usuario·año",
+                    _t("em_kpi_kwh_user", "kWh/usuario·año"),
                     f"{(e.get('kwh_per_user_yr') or 0):,.0f}"
                     if e.get("kwh_per_user_yr")
                     else "–",
@@ -1425,18 +1614,18 @@ def page_energy_management():
             if ms:
                 sdf = pd.DataFrame(ms)
                 sdf["month"] = pd.to_datetime(sdf["month"])
-                st.markdown("**Tendencias mensuales**")
+                st.markdown("**" + _t("em_trends_title", "Tendencias mensuales") + "**")
                 c5, c6 = st.columns(2)
                 with c5:
                     st.altair_chart(
                         alt.Chart(sdf)
                         .mark_line(point=True)
                         .encode(
-                            x=alt.X("month:T", title="Mes"),
-                            y=alt.Y("kwh:Q", title="kWh"),
+                            x=alt.X("month:T", title=_t("em_trends_x", "Mes")),
+                            y=alt.Y("kwh:Q", title=_t("em_trends_kwh", "kWh")),
                             tooltip=[
-                                alt.Tooltip("month:T", title="Mes", format="%Y-%m"),
-                                alt.Tooltip("kwh:Q", title="KWh", format=",.0f"),
+                                alt.Tooltip("month:T", title=_t("em_trends_x", "Mes"), format="%Y-%m"),
+                                alt.Tooltip("kwh:Q", title=_t("em_trends_kwh", "KWh"), format=",.0f"),
                             ],
                         )
                         .properties(height=280),
@@ -1447,11 +1636,11 @@ def page_energy_management():
                         alt.Chart(sdf)
                         .mark_line(point=True)
                         .encode(
-                            x=alt.X("month:T", title="Mes"),
-                            y=alt.Y("cost:Q", title="Costo"),
+                            x=alt.X("month:T", title=_t("em_trends_x", "Mes")),
+                            y=alt.Y("cost:Q", title=_t("em_trends_cost", "Costo")),
                             tooltip=[
-                                alt.Tooltip("month:T", title="Mes", format="%Y-%m"),
-                                alt.Tooltip("cost:Q", title="Costo", format=",.2f"),
+                                alt.Tooltip("month:T", title=_t("em_trends_x", "Mes"), format="%Y-%m"),
+                                alt.Tooltip("cost:Q", title=_t("em_trends_cost", "Costo"), format=",.2f"),
                             ],
                         )
                         .properties(height=280),
@@ -1462,27 +1651,32 @@ def page_energy_management():
     # 8) Generación del reporte con OpenAI (igual que antes)
     # ------------------------------------------------------------------
     st.markdown("---")
-    st.markdown("#### Generar reporte con OpenAI")
+    st.markdown("#### " + _t("em_report_section_title", "Generar reporte con OpenAI"))
 
     colm1, colm2, colm3 = st.columns([2, 1, 1])
     with colm1:
-        model = st.selectbox("Modelo OpenAI", ["gpt-4o-mini", "gpt-4o"], index=0)
+        model = st.selectbox(
+            _t("em_report_model", "Modelo OpenAI"),
+            ["gpt-4o-mini", "gpt-4o"],
+            index=0
+        )
     with colm2:
-        detail_level = st.slider("Nivel de detalle", 1, 5, 3, 1)
+        detail_level = st.slider(_t("em_report_detail", "Nivel de detalle"), 1, 5, 3, 1)
     with colm3:
-        temperature = st.slider("Creatividad (temp.)", 0.0, 1.0, 0.2, 0.1)
+        temperature = st.slider(_t("em_report_temp", "Creatividad (temp.)"), 0.0, 1.0, 0.2, 0.1)
 
-    brand_color = st.color_picker("Color institucional", "#0B8C6B", key="em_color")
-    logo_url = st.text_input("Logo (URL pública opcional)", key="em_logo")
+    brand_color = st.color_picker(_t("em_brand_color", "Color institucional"), "#0B8C6B", key="em_color")
+    logo_url = st.text_input(_t("em_logo_url", "Logo (URL pública opcional)"), key="em_logo")
 
-    if st.button("Generar reporte ISO 50001", key="em_report"):
+    if st.button(_t("em_btn_generate_report", "Generar reporte ISO 50001"), key="em_report"):
         dataset = st.session_state.get("em_last_dataset")
         if not dataset:
-            st.error("No hay dataset guardado para generar el reporte.")
+            st.error(_t("em_no_dataset", "No hay dataset guardado para generar el reporte."))
         else:
-            st.info(
+            st.info(_t(
+                "em_generating_report_info",
                 f"Generando reporte con **{model}** · detalle **{detail_level}/5** · temp **{temperature:.1f}**…"
-            )
+            ).format(model=model, detail=detail_level, temp=temperature))
             llm_text = _em_openai_report(
                 dataset=dataset,
                 brand_color=brand_color,
@@ -1514,12 +1708,12 @@ def page_energy_management():
             pdf_bytes = _em_html_to_pdf_bytes(pdf_html)
             if pdf_bytes:
                 st.download_button(
-                    "⬇️ Descargar PDF (A4)",
+                    _t("em_pdf_download", "⬇️ Descargar PDF (A4)"),
                     data=pdf_bytes,
                     file_name="energy_report.pdf",
                     mime="application/pdf",
                     use_container_width=True,
                 )
             else:
-                st.info("Podés exportar el PDF directamente desde tu navegador.")
-                _em_show_print_button(pdf_html, label="🖨️ Imprimir / Guardar como PDF (A4)")
+                st.info(_t("em_pdf_fallback", "Podés exportar el PDF directamente desde tu navegador."))
+                _em_show_print_button(pdf_html, label=_t("em_pdf_print_label", "🖨️ Imprimir / Guardar como PDF (A4)"))
