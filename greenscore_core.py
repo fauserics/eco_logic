@@ -158,7 +158,31 @@ def _t(key: str) -> str:
     base = TRANSLATIONS.get("es", {})
     return TRANSLATIONS.get(lang, base).get(key, base.get(key, key))
 
+def language_selector():
+    """
+    Muestra el selector de idioma SIEMPRE en la barra lateral
+    y guarda la selección en st.session_state["lang"].
+    """
+    if "lang" not in st.session_state:
+        st.session_state["lang"] = "es"
 
+    codes = [c for c, _ in LANG_OPTIONS]
+    labels = {c: label for c, label in LANG_OPTIONS}
+
+    with st.sidebar:
+        st.markdown("**Idioma / Language**")
+        current = st.session_state.get("lang", "es")
+        try:
+            idx = codes.index(current)
+        except ValueError:
+            idx = 0
+        st.selectbox(
+            " ",  # etiqueta mínima
+            options=codes,
+            index=idx,
+            key="lang",
+            format_func=lambda c: labels[c],
+        )
 # ========================= CONFIG / DEFAULTS =========================
 
 DEFAULT_CFG = {
