@@ -764,7 +764,7 @@ def page_proyecto_individual():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
 
-    st.subheader("Proyectos individual")
+    
     with st.expander("⚙️ Ajustes generales del esquema", expanded=True):
         scheme = st.selectbox("Esquema", options=SCHEMES, index=0, key="pi_scheme")
         scheme_cfg = cfg["schemes"][scheme]
@@ -816,7 +816,7 @@ def page_proyecto_individual():
 def page_portfolio():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
-    st.subheader("Portfolio con tipologías")
+    
 
     scheme = st.selectbox("Esquema del cálculo para el portfolio", options=SCHEMES, index=0, key="pf_scheme")
     scheme_cfg = cfg["schemes"][scheme]
@@ -907,7 +907,7 @@ def page_metodologia():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
 
-    st.subheader("Metodología (demo)")
+    
     scheme = st.selectbox("Esquema a visualizar", options=SCHEMES, index=0, key="me_scheme")
     scheme_cfg = cfg["schemes"][scheme]
 
@@ -935,7 +935,7 @@ def page_energy_management():
     # Idioma (simple: es/en)
     lang = st.session_state.get("lang", "es")
 
-    st.subheader("AUnergy Score ⚡")
+    
 
     # ------------------------------------------------------------------
     # 0) Sitios guardados en sesión (múltiples edificios)
