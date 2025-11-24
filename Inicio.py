@@ -61,6 +61,6 @@ st.markdown(
 st.caption(
     _t(
         "home_footer",
-        "© GreenScore - AInergy Score · Demo con módulo ISO 50001, reporte LLM y exportación PDF.",
+        "© GreenScore - AUnergy Score · Demo con módulo ISO 50001, reporte LLM y exportación PDF.",
     )
 )
