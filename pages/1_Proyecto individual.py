@@ -1,5 +1,5 @@
 import streamlit as st
-from greenscore_core import page_proyecto_individual, language_selector, _t
+from greenscore_core import page_proyecto_individual, language_selector
 
 language_selector()
 
