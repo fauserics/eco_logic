@@ -835,7 +835,7 @@ def page_metodologia():
 
 
 def page_energy_management():
-    st.subheader("AInergy Score Audit ⚡")
+    st.subheader("AUnergy Score ⚡")
 
     # ====== ESTADO BASE ======
     if "em_ledger" not in st.session_state:
