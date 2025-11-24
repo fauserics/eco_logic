@@ -1,7 +1,17 @@
 import streamlit as st
-from greenscore_core import page_portfolio, language_selector
+import greenscore_core as gc  # núcleo común
 
-st.set_page_config(page_title="Portfolio – GreenScore", page_icon="🌿", layout="wide")
+st.set_page_config(
+    page_title="Portfolio con tipologías",
+    page_icon="📊",
+    layout="wide",
+)
 
-language_selector()
-page_portfolio()
+# Selector de idioma siempre visible en la barra lateral
+gc.language_selector()
+lang = gc.get_lang()  # por si luego querés usarlo en textos adicionales
+
+st.title("Portfolio con tipologías")
+
+# Contenido principal desde el core
+gc.page_portfolio()
