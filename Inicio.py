@@ -1,5 +1,6 @@
 from pathlib import Path
 import streamlit as st
+rom greenscore_core import language_selector, _t
 
 # Idiomas soportados
 LANG_OPTIONS = {
@@ -23,6 +24,9 @@ with st.sidebar:
 
 
 st.set_page_config(page_title="Inicio – GreenScore", page_icon="🌿", layout="wide")
+
+language_selector()
+
 
 # Sidebar visible y diseño compacto
 st.markdown("""
