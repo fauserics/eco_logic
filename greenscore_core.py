@@ -8,17 +8,14 @@ import pandas as pd
 import streamlit as st
 
 
+
 # ========================= IDIOMAS / TRADUCCIONES =========================
 
 # Lista (código, etiqueta)
 LANG_OPTIONS = [
     ("es", "Español"),
     ("en", "English"),
-    ("fr", "Français"),
-    ("pt", "Português"),
-    ("it", "Italiano"),
-    ("de", "Deutsch"),
-]
+    ]
 
 # Diccionario de traducciones. Podés ir agregando claves.
 TRANSLATIONS = {
@@ -98,6 +95,7 @@ def language_selector():
     # actualizar código en sesión
     new_code = codes[labels.index(choice)]
     st.session_state["lang"] = new_code
+
 
 # ========================= CONFIG / DEFAULTS =========================
 
