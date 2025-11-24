@@ -834,7 +834,7 @@ def page_metodologia():
                  hide_index=True, use_container_width=True)
 
 def page_energy_management():
-    st.subheader("AINergy Score Audit")
+    st.subheader("AINergy Score Audit ⚡")
 
     # ------ Registro histórico (import/export) ------
     with st.expander("📒 Registro histórico de facturas (CSV)", expanded=False):
