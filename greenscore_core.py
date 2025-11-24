@@ -764,7 +764,7 @@ def page_proyecto_individual():
     cfg = load_config()
     SCHEMES = list(cfg["schemes"].keys())
 
-    st.subheader("Proyecto individual")
+    st.subheader("Proyectos individual")
     with st.expander("⚙️ Ajustes generales del esquema", expanded=True):
         scheme = st.selectbox("Esquema", options=SCHEMES, index=0, key="pi_scheme")
         scheme_cfg = cfg["schemes"][scheme]
