@@ -9,6 +9,68 @@ import streamlit as st
 
 # ========================= IDIOMAS SENCILLOS ES / EN =========================
 
+LANG_OPTIONS = {
+    "Español": "es",
+    "English": "en",
+}
+
+TRANSLATIONS = {
+    "en": {
+        "home_page_title": "Home – GreenScore",
+        "home_title": "GreenScore",
+        "home_intro": (
+            "Environmental assessment of buildings and portfolios with a practical focus. "
+            "It integrates LEED/EDGE-style scoring, typology analysis and the "
+            "Energy Management (ISO 50001) module: photos and bills/measurements, "
+            "baseline and EnPIs, number of users and an institutional report "
+            "with OpenAI (HTML and A4 PDF with cover, dynamic index and page numbers)."
+        ),
+        "home_footer": (
+            "© GreenScore – AInergy Score · Demo with ISO 50001 module, "
+            "LLM report and PDF export."
+        ),
+    }
+}
+
+
+def get_lang():
+    return st.session_state.get("lang", "es")
+
+
+def _t(key, default=None):
+    """
+    _t("home_title", "GreenScore") -> devuelve traducción si lang=='en',
+    si no, el texto por defecto.
+    """
+    lang = get_lang()
+    if lang == "en":
+        return TRANSLATIONS.get("en", {}).get(key, default if default is not None else key)
+    # Español por defecto
+    return default if default is not None else key
+
+
+def language_selector():
+    """Selector de idioma global en el sidebar (es/en)."""
+    if "lang" not in st.session_state:
+        st.session_state["lang"] = "es"
+
+    with st.sidebar:
+        label = "Idioma / Language"
+        # código actual -> label actual
+        rev = {v: k for k, v in LANG_OPTIONS.items()}
+        current_label = rev.get(st.session_state["lang"], "Español")
+        labels = list(LANG_OPTIONS.keys())
+        idx = labels.index(current_label) if current_label in labels else 0
+
+        choice = st.selectbox(
+            label,
+            labels,
+            index=idx,
+            key="__lang_select_global",
+        )
+        st.session_state["lang"] = LANG_OPTIONS[choice]
+
+
 def get_lang() -> str:
     """
     Devuelve el idioma actual de la app: 'es' o 'en'.
