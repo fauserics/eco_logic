@@ -7,182 +7,98 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-# ========================= I18N SENCILLO =========================
 
+# ========================= IDIOMAS / TRADUCCIONES =========================
+
+# Lista (código, etiqueta)
+LANG_OPTIONS = [
+    ("es", "Español"),
+    ("en", "English"),
+    ("fr", "Français"),
+    ("pt", "Português"),
+    ("it", "Italiano"),
+    ("de", "Deutsch"),
+]
+
+# Diccionario de traducciones. Podés ir agregando claves.
 TRANSLATIONS = {
     "es": {
-        "energy_mgmt_subheader": "AInergy Score Audit ⚡",
-        "org_label": "Organización",
-        "site_label": "Sitio/Edificio",
-        "users_label": "Nº usuarios",
-        "addr_label": "Dirección",
-        "climate_zone_label": "Zona climática",
-        "baseline_from": "Baseline desde",
-        "baseline_to": "Baseline hasta",
-        "seus_title": "Usos significativos de energía (SEUs) y tipologías",
-        "seus_label": "SEUs (seleccioná uno o más)",
-        "seus_other_label": "Otros SEUs (uno por línea)",
-        "enpis_label": "EnPIs candidatos (uno por línea)",
-        "profile_title": "Perfiles de uso",
-        "photos_title": "Fotos y videos del edificio",
-        "building_photos_uploader": "Fotos del edificio (PNG/JPG)",
-        "building_videos_uploader": "Videos del edificio (MP4/MOV)",
-        "seus_photos_title": "Fotos asociadas a SEUs (podés usar la cámara del dispositivo)",
-        "seus_photos_uploader": "Fotos de SEUs (equipos, tableros, áreas críticas)",
-        "ledger_expander": "📒 Registro histórico de facturas (CSV)",
-        "ledger_caption": "Importá un ledger previo o descargá el actual normalizado.",
-        "ledger_upload_label": "Cargar ledger CSV (columnas: _year_month,_kwh,_cost,_demand_kw,_currency,_source)",
-        "ledger_download_label": "⬇️ Descargar ledger actual (CSV)",
-        "invoices_title": "Facturas y mediciones",
-        "invoices_files_label": "Facturas/mediciones (CSV/XLSX o PDF)",
-        "invoice_photos_label": "Fotos de facturas (PNG/JPG, para OCR)",
-        "ocr_options_expander": "Opciones de lectura de facturas",
-        "ocr_toggle": "Usar OCR con OpenAI (imágenes y PDFs escaneados)",
-        "ocr_model_label": "Modelo para OCR/parse",
-        "ocr_dpi_label": "DPI para rasterizar PDF",
-        "policy_title": "Política energética, objetivos y plan",
-        "policy_label": "Política energética (borrador)",
-        "objectives_label": "Objetivos/Metas (uno por línea)",
-        "action_plan_label": "Plan de acción (uno por línea)",
-        "save_dataset_btn": "Guardar dataset del sitio (memoria de sesión)",
-        "dataset_saved_msg": "Dataset guardado en memoria de sesión.",
-        "ledger_view_title": "Ledger normalizado (histórico consolidado):",
-        "baseline_enpi_title": "Baseline y EnPIs:",
-        "monthly_trends_title": "Tendencias mensuales",
-        "report_section_title": "#### Generar reporte con OpenAI",
-        "report_model_label": "Modelo OpenAI",
-        "report_detail_label": "Nivel de detalle",
-        "report_temp_label": "Creatividad (temp.)",
-        "brand_color_label": "Color institucional",
-        "logo_url_label": "Logo (URL pública opcional)",
-        "report_button_label": "Generar reporte ISO 50001",
-        "report_no_dataset": "No hay dataset guardado para generar el reporte.",
-        "report_generating_msg": "Generando reporte con",
-        "report_preview_label": "Vista previa:",
-        "report_pdf_download": "⬇️ Descargar PDF (A4)",
-        "report_pdf_info": "Podés exportar el PDF directamente desde tu navegador.",
-        "evidences_title": "Evidencias adicionales para el informe",
-        "evid_building_label": "Fotos del edificio (fachadas, accesos)",
-        "evid_equipment_label": "Fotos de equipos (chillers, calderas, tableros, etc.)",
-        "evid_labels_label": "Fotos de etiquetas (placas, etiquetas energéticas)",
-        "evid_vegetation_label": "Fotos de vegetación y entorno cercano",
-        "saved_sites_title": "Sitios guardados en esta sesión",
-        "saved_sites_select": "Seleccionar sitio",
-        "saved_sites_empty": "Todavía no hay sitios guardados en esta sesión.",
-        "kwh_year_metric": "kWh/año (equiv.)",
-        "cost_per_kwh_metric": "$/kWh",
-        "kwh_m2_metric": "kWh/m²·año",
-        "kwh_user_metric": "kWh/usuario·año",
+        "sidebar_language_label": "Idioma / Language",
+        "home_title": "GreenScore",
+        "home_intro": (
+            "Evaluación ambiental de edificios y portafolios con un enfoque práctico. "
+            "Integra scoring tipo **LEED/EDGE**, análisis por tipologías y el módulo "
+            "**Energy Management (ISO 50001)**: carga de fotos y facturas/mediciones, "
+            "definición de línea de base y EnPIs, número de usuarios y **reporte institucional** "
+            "con OpenAI (HTML y PDF A4 con portada, índice dinámico y numeración)."
+        ),
+        "home_caption": "© GreenScore - AInergy Score · Demo con módulo ISO 50001, reporte LLM y exportación PDF.",
     },
     "en": {
-        "energy_mgmt_subheader": "AInergy Score Audit ⚡",
-        "org_label": "Organization",
-        "site_label": "Site / Building",
-        "users_label": "Number of users",
-        "addr_label": "Address",
-        "climate_zone_label": "Climate zone",
-        "baseline_from": "Baseline from",
-        "baseline_to": "Baseline to",
-        "seus_title": "Significant Energy Uses (SEUs) and typologies",
-        "seus_label": "SEUs (select one or more)",
-        "seus_other_label": "Other SEUs (one per line)",
-        "enpis_label": "Candidate EnPIs (one per line)",
-        "profile_title": "Usage profiles",
-        "photos_title": "Building photos and videos",
-        "building_photos_uploader": "Building photos (PNG/JPG)",
-        "building_videos_uploader": "Building videos (MP4/MOV)",
-        "seus_photos_title": "SEU-related photos (you can use the device camera)",
-        "seus_photos_uploader": "SEU photos (equipment, panels, critical areas)",
-        "ledger_expander": "📒 Historical invoices ledger (CSV)",
-        "ledger_caption": "Import a previous ledger or download the normalized one.",
-        "ledger_upload_label": "Upload ledger CSV (columns: _year_month,_kwh,_cost,_demand_kw,_currency,_source)",
-        "ledger_download_label": "⬇️ Download current ledger (CSV)",
-        "invoices_title": "Invoices and measurements",
-        "invoices_files_label": "Invoices/measurements (CSV/XLSX or PDF)",
-        "invoice_photos_label": "Invoice photos (PNG/JPG, for OCR)",
-        "ocr_options_expander": "Invoice reading options",
-        "ocr_toggle": "Use OCR with OpenAI (scanned images and PDFs)",
-        "ocr_model_label": "Model for OCR/parse",
-        "ocr_dpi_label": "DPI to rasterize PDF",
-        "policy_title": "Energy policy, objectives and plan",
-        "policy_label": "Energy policy (draft)",
-        "objectives_label": "Objectives/Targets (one per line)",
-        "action_plan_label": "Action plan (one per line)",
-        "save_dataset_btn": "Save site dataset (session memory)",
-        "dataset_saved_msg": "Dataset saved in session memory.",
-        "ledger_view_title": "Normalized ledger (historic consolidated):",
-        "baseline_enpi_title": "Baseline and EnPIs:",
-        "monthly_trends_title": "Monthly trends",
-        "report_section_title": "#### Generate report with OpenAI",
-        "report_model_label": "OpenAI model",
-        "report_detail_label": "Detail level",
-        "report_temp_label": "Creativity (temp.)",
-        "brand_color_label": "Brand color",
-        "logo_url_label": "Logo (public URL, optional)",
-        "report_button_label": "Generate ISO 50001 report",
-        "report_no_dataset": "No dataset stored to generate the report.",
-        "report_generating_msg": "Generating report with",
-        "report_preview_label": "Preview:",
-        "report_pdf_download": "⬇️ Download PDF (A4)",
-        "report_pdf_info": "You can export the PDF directly from your browser.",
-        "evidences_title": "Additional evidences for the report",
-        "evid_building_label": "Building photos (facades, entrances)",
-        "evid_equipment_label": "Equipment photos (chillers, boilers, panels, etc.)",
-        "evid_labels_label": "Label photos (nameplates, energy labels)",
-        "evid_vegetation_label": "Vegetation and surroundings photos",
-        "saved_sites_title": "Sites saved in this session",
-        "saved_sites_select": "Select site",
-        "saved_sites_empty": "No sites saved in this session yet.",
-        "kwh_year_metric": "kWh/year (equiv.)",
-        "cost_per_kwh_metric": "Cost per kWh",
-        "kwh_m2_metric": "kWh/m²·year",
-        "kwh_user_metric": "kWh/user·year",
+        "sidebar_language_label": "Language",
+        "home_title": "GreenScore",
+        "home_intro": (
+            "Environmental assessment of buildings and portfolios with a practical approach. "
+            "It integrates LEED/EDGE-style scoring, typology-based analysis and the "
+            "**Energy Management (ISO 50001)** module: photo and bill/measurement upload, "
+            "baseline and EnPI definition, number of users and an **institutional report** "
+            "with OpenAI (HTML and A4 PDF with cover, dynamic index and page numbering)."
+        ),
+        "home_caption": "© GreenScore - AInergy Score · Demo with ISO 50001 module, LLM report and PDF export.",
     },
     "fr": {
-        "energy_mgmt_subheader": "Audit AInergy Score ⚡",
+        "sidebar_language_label": "Langue",
     },
     "pt": {
-        "energy_mgmt_subheader": "AInergy Score Audit ⚡",
+        "sidebar_language_label": "Idioma",
     },
     "it": {
-        "energy_mgmt_subheader": "AInergy Score Audit ⚡",
+        "sidebar_language_label": "Lingua",
     },
     "de": {
-        "energy_mgmt_subheader": "AInergy Score Audit ⚡",
+        "sidebar_language_label": "Sprache",
     },
 }
 
-
 def _t(key: str) -> str:
+    """
+    Traductor simple. Si la clave no existe en el idioma actual,
+    cae a español y si tampoco existe, devuelve la clave tal cual.
+    """
     lang = st.session_state.get("lang", "es")
-    base = TRANSLATIONS.get("es", {})
-    return TRANSLATIONS.get(lang, base).get(key, base.get(key, key))
+    return (
+        TRANSLATIONS.get(lang, {}).get(
+            key,
+            TRANSLATIONS.get("es", {}).get(key, key),
+        )
+    )
 
 def language_selector():
     """
-    Muestra el selector de idioma SIEMPRE en la barra lateral
-    y guarda la selección en st.session_state["lang"].
+    Selector de idioma global. Llamalo desde cada página (Inicio y pages/*)
+    para que el dropdown esté siempre en el sidebar.
     """
     if "lang" not in st.session_state:
         st.session_state["lang"] = "es"
 
     codes = [c for c, _ in LANG_OPTIONS]
-    labels = {c: label for c, label in LANG_OPTIONS}
+    labels = [lbl for _, lbl in LANG_OPTIONS]
+
+    # idioma actual → índice
+    current_code = st.session_state["lang"]
+    try:
+        idx = codes.index(current_code)
+    except ValueError:
+        idx = 0
 
     with st.sidebar:
-        st.markdown("**Idioma / Language**")
-        current = st.session_state.get("lang", "es")
-        try:
-            idx = codes.index(current)
-        except ValueError:
-            idx = 0
-        st.selectbox(
-            " ",  # etiqueta mínima
-            options=codes,
-            index=idx,
-            key="lang",
-            format_func=lambda c: labels[c],
-        )
+        label = _t("sidebar_language_label")
+        choice = st.selectbox(label, labels, index=idx, key="__lang_select")
+
+    # actualizar código en sesión
+    new_code = codes[labels.index(choice)]
+    st.session_state["lang"] = new_code
+
 # ========================= CONFIG / DEFAULTS =========================
 
 DEFAULT_CFG = {
