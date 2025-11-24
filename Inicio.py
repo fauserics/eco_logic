@@ -1,6 +1,27 @@
 from pathlib import Path
 import streamlit as st
 
+# Idiomas soportados
+LANG_OPTIONS = {
+    "Español": "es",
+    "English": "en",
+    "Français": "fr",
+    "Português": "pt",
+    "Italiano": "it",
+    "Deutsch": "de",
+}
+
+if "lang" not in st.session_state:
+    st.session_state["lang"] = "es"
+
+st.set_page_config(page_title="Eco Logic / AInergy Score", page_icon="⚡", layout="wide")
+
+with st.sidebar:
+    label = "Idioma / Language"
+    choice = st.selectbox(label, list(LANG_OPTIONS.keys()), index=0, key="__lang_select")
+    st.session_state["lang"] = LANG_OPTIONS[choice]
+
+
 st.set_page_config(page_title="Inicio – GreenScore", page_icon="🌿", layout="wide")
 
 # Sidebar visible y diseño compacto
