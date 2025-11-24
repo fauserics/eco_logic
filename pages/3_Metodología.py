@@ -1,8 +1,17 @@
 import streamlit as st
-from greenscore_core import page_metodologia, language_selector
+import greenscore_core as gc  # núcleo común
 
+st.set_page_config(
+    page_title="Metodología",
+    page_icon="📐",
+    layout="wide",
+)
 
-st.set_page_config(page_title="Metodología – GreenScore", page_icon="🌿", layout="wide")
+# Selector de idioma siempre visible en la barra lateral
+gc.language_selector()
+lang = gc.get_lang()
 
-language_selector()
-page_metodologia()
+st.title("Metodología")
+
+# Contenido principal desde el core
+gc.page_metodologia()
