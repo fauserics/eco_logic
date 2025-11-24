@@ -62,4 +62,4 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.caption("© GreenScore - AInergy Score Audit · Demo con módulo ISO 50001, reporte LLM y exportación PDF.")
+st.caption("© GreenScore - AUnergy Score · Demo con módulo ISO 50001, reporte LLM y exportación PDF.")
