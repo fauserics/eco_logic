@@ -3,7 +3,7 @@ import greenscore_core as gc  # 👈 importamos el módulo entero
 
 # Config de la página
 st.set_page_config(
-    page_title="Proyectos individual",
+    page_title="Proyecto individual",
     page_icon="🏗️",
     layout="wide",
 )
