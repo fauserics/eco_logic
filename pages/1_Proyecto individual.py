@@ -1,7 +1,7 @@
 import streamlit as st
 from greenscore_core import page_proyecto_individual, language_selector
 
-language_selector()
-
 st.set_page_config(page_title="Proyecto individual – GreenScore", page_icon="🌿", layout="wide")
+
+language_selector()
 page_proyecto_individual()
