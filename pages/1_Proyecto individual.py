@@ -1,13 +1,6 @@
 import streamlit as st
 import greenscore_core as gc  # 👈 importamos el módulo entero
 
-# Config de la página
-st.set_page_config(
-    page_title="Proyecto individual",
-    page_icon="🏗️",
-    layout="wide",
-)
-
 # Selector de idioma SIEMPRE visible en la barra lateral
 gc.language_selector()
 lang = gc.get_lang()
