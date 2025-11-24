@@ -1,16 +1,19 @@
 import streamlit as st
-from greenscore_core import language_selector, get_lang, page_proyecto_individual
+import greenscore_core as gc  # 👈 importamos el módulo entero
 
-st.set_page_config(page_title="Proyecto individual – GreenScore", page_icon="🌿", layout="wide")
+# Config de la página
+st.set_page_config(
+    page_title="Proyecto individual",
+    page_icon="🏗️",
+    layout="wide",
+)
 
-# Si querés un título arriba de la subpágina:
-if lang == "en":
-    st.title("AInergy Score Audit")
-else:
-    st.title("AInergy Score Audit")
+# Selector de idioma SIEMPRE visible en la barra lateral
+gc.language_selector()
+lang = gc.get_lang()
 
+# (Si más adelante traducís textos, podés usar `lang` aquí)
+st.title("Proyecto individual")
 
-
-# Selector de idioma en el sidebar
-lang = get_lang()
-page_proyecto_individual()
+# Render de la página usando la función del core
+gc.page_proyecto_individual()
