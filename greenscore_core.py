@@ -832,7 +832,7 @@ def page_metodologia():
                      "Target": meta.get("target","")})
     st.dataframe(pd.DataFrame(rows).sort_values(["Categoría","Etiqueta"]),
                  hide_index=True, use_container_width=True)
-
+    
 def page_energy_management():
     st.subheader("AInergy Score Audit ⚡")
 
@@ -880,6 +880,67 @@ def page_energy_management():
     peak_occupancy = int(occ_col1.number_input("Ocupación pico", 0, 1_000_000, 0, key="em_peak"))
     occupancy_pattern = occ_col2.text_input("Patrón de ocupación", "L–V 9–18, sáb reducido", key="em_occpat")
 
+    # ====== NUEVO BLOQUE: PERFIL DEL EDIFICIO + FOTOS/VIDEOS ======
+    st.markdown("**Perfil del edificio y evidencias visuales**")
+
+    colb1, colb2 = st.columns(2)
+    building_type = colb1.selectbox(
+        "Tipo de edificio",
+        [
+            "Oficinas", "Residencial", "Educativo", "Sanitario",
+            "Comercial", "Industrial liviano", "Logístico", "Hotel", "Otro"
+        ],
+        key="em_building_type",
+    )
+    schedule = colb2.text_input(
+        "Horarios de operación",
+        value=st.session_state.get("em_schedule", "L–V 9–18, sáb reducido"),
+        key="em_schedule",
+    )
+
+    colb3, colb4 = st.columns(2)
+    fixed_users = colb3.number_input(
+        "Personas fijas (promedio)",
+        min_value=0, max_value=1_000_000,
+        value=users_count or 0,
+        key="em_fixed_users",
+    )
+    visitors = colb4.number_input(
+        "Visitantes diarios (promedio)",
+        min_value=0, max_value=1_000_000,
+        value=0,
+        key="em_visitors",
+    )
+
+    appliance_options = [
+        "Aire acondicionado central",
+        "Splits individuales",
+        "Calefacción a gas",
+        "Calefacción eléctrica",
+        "Servidores / datacenter",
+        "Heladeras / freezers",
+        "Cámaras frigoríficas",
+        "Motores / bombas",
+        "Equipos de cocina eléctricos",
+        "Ascensores / montacargas",
+        "Iluminación LED",
+        "Iluminación fluorescente / halógena",
+    ]
+    appliances = st.multiselect(
+        "Electrodomésticos y equipos presentes",
+        options=appliance_options,
+        default=[],
+        key="em_appliances",
+    )
+
+    building_media = st.file_uploader(
+        "Fotos y videos del edificio (PNG/JPG/MP4/MOV)",
+        type=["png", "jpg", "jpeg", "mp4", "mov"],
+        accept_multiple_files=True,
+        key="em_building_media",
+    )
+    # ===============================================================
+
     st.markdown("**Evidencias**")
     photos = st.file_uploader("Fotos / Facturas en imagen (PNG/JPG)", type=["png","jpg","jpeg"], accept_multiple_files=True, key="em_photos")
     invoices = st.file_uploader("Facturas/mediciones (CSV/XLSX o PDF)", type=["csv","xlsx","xls","pdf"], accept_multiple_files=True, key="em_invoices")
@@ -900,6 +961,12 @@ def page_energy_management():
     # ---- Guardar dataset del sitio
     if st.button("Guardar dataset del sitio (memoria de sesión)", key="em_save"):
         inv_tables, saved_files = [], []
+
+        # 0) Media del edificio (solo como evidencia, sin OCR)
+        for m in (building_media or []):
+            name = getattr(m, "name", "")
+            if name:
+                saved_files.append(name)
 
         # 1) CSV/XLSX/PDF
         for f in (invoices or []):
@@ -936,7 +1003,7 @@ def page_energy_management():
             except Exception as e:
                 st.warning(f"No se pudo leer {name}: {e}")
 
-        # 2) Imágenes (OCR)
+        # 2) Imágenes (OCR) - fotos de facturas
         for p in (photos or []):
             saved_files.append(getattr(p, "name", ""))
             try:
@@ -991,6 +1058,12 @@ def page_energy_management():
                 "enpis": [s.strip() for s in (enpis or "").splitlines() if s.strip()],
                 "objectives": [s.strip() for s in (objectives or "").splitlines() if s.strip()],
                 "action_plan": [s.strip() for s in (action_plan or "").splitlines() if s.strip()],
+                # NUEVO: perfil del edificio
+                "building_type": building_type,
+                "operation_schedule": schedule,
+                "fixed_users": fixed_users,
+                "visitors_per_day": visitors,
+                "appliances": appliances,
             },
             "users_profile": {
                 "users_count": users_count,
@@ -998,7 +1071,7 @@ def page_energy_management():
                 "occupancy_pattern": occupancy_pattern,
             },
             "building_uses": uses_df.to_dict("records"),
-            "evidence_files": saved_files,
+            "evidence_files": saved_files,  # incluye media del edificio + facturas/fotos
             "invoices": {
                 "preview_rows": use_df.head(100).to_dict(orient="records") if (not use_df.empty) else [],
                 "summary": invoices_summary
@@ -1100,3 +1173,4 @@ def page_energy_management():
             else:
                 st.info("Podés exportar el PDF directamente desde tu navegador.")
                 _em_show_print_button(pdf_html, label="🖨️ Imprimir / Guardar como PDF (A4)")
+
