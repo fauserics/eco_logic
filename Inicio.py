@@ -2,29 +2,37 @@ from pathlib import Path
 import streamlit as st
 from greenscore_core import language_selector, _t
 
-# ⚙️ Config general de la app
-st.set_page_config(page_title="Eco Logic / AInergy Score", page_icon="⚡", layout="wide")
+st.set_page_config(
+    page_title=_t("home_page_title", "Inicio – GreenScore"),
+    page_icon="🌿",
+    layout="wide",
+)
 
-# 🌐 Selector de idioma SIEMPRE visible en la barra lateral
+# Selector de idioma siempre visible a la izquierda
 language_selector()
 
-# 💄 Sidebar visible y diseño compacto
+# Sidebar visible y diseño compacto
 st.markdown(
     """
-    <style>
-    section[data-testid="stSidebarNav"] { display:block !important; visibility:visible !important; }
-    .block-container { padding-top: 1.2rem !important; }
-    div[data-testid="stDecoration"] { display:none !important; }
-    </style>
-    """,
+<style>
+section[data-testid="stSidebarNav"] { display:block !important; visibility:visible !important; }
+.block-container { padding-top: 1.2rem !important; }
+div[data-testid="stDecoration"] { display:none !important; }
+</style>
+""",
     unsafe_allow_html=True,
 )
 
-# 🏠 Contenido de la página de inicio
-st.title(_t("home_title"))
-
+st.title(_t("home_title", "GreenScore"))
 st.write(
-    _t("home_intro")
+    _t(
+        "home_intro",
+        "Evaluación ambiental de edificios y portafolios con un enfoque práctico. "
+        "Integra scoring tipo LEED/EDGE, análisis por tipologías y el módulo "
+        "Energy Management (ISO 50001): carga de fotos y facturas/mediciones, "
+        "definición de línea de base y EnPIs, número de usuarios y reporte institucional "
+        "con OpenAI (HTML y PDF A4 con portada, índice dinámico y numeración).",
+    )
 )
 
 # Imagen portada (sin scroll)
@@ -50,4 +58,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.caption(_t("home_caption"))
+st.caption(
+    _t(
+        "home_footer",
+        "© GreenScore - AInergy Score · Demo con módulo ISO 50001, reporte LLM y exportación PDF.",
+    )
+)
